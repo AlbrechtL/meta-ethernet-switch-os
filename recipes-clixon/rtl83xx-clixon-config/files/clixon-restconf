@@ -1,0 +1,40 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          clixon-restconf
+# Required-Start:    $networking clixon-backend
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Clixon RESTCONF daemon (HTTP/1, port 80)
+### END INIT INFO
+
+DAEMON=/usr/sbin/clixon_restconf
+CONFIG=/etc/clixon.xml
+PIDFILE=/var/run/clixon_restconf.pid
+
+test -x "$DAEMON" || exit 0
+
+case "$1" in
+    start)
+        echo -n "Starting clixon restconf: "
+        # clixon_restconf has no daemon mode, so start-stop-daemon backgrounds
+        # it and writes the pidfile. It drops to CLICON_RESTCONF_USER after
+        # binding the port, in the same process.
+        start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DAEMON" -- -f "$CONFIG" \
+            && echo "clixon_restconf."
+        ;;
+    stop)
+        echo -n "Stopping clixon restconf: "
+        start-stop-daemon -K -p "$PIDFILE" && echo "clixon_restconf."
+        rm -f "$PIDFILE"
+        ;;
+    restart)
+        "$0" stop
+        "$0" start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0

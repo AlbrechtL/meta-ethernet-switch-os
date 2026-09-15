@@ -1,0 +1,24 @@
+SUMMARY = "Base userspace for RTL83xx switches"
+DESCRIPTION = "Static br-lan network setup, the clixon YANG management \
+framework with its CLI and RESTCONF, and the SWUpdate daemon with its web \
+interface."
+
+# packagegroup.bbclass defaults to allarch, and an allarch packagegroup must not
+# RDEPEND on names the debian class renames per architecture (a package holding
+# only a shared library becomes "lib<name><soversion>"). This has to come
+# BEFORE the inherit: the class decides with
+# PACKAGE_ARCH_EXPANDED := "${PACKAGE_ARCH}". Set afterwards it is silently too
+# late, and the rename check is a non-fatal bb.error, so the task still
+# "succeeds" and is not re-run.
+PACKAGE_ARCH = "${TUNE_PKGARCH}"
+
+inherit packagegroup
+
+RDEPENDS:${PN} = " \
+    clixon \
+    rtl83xx-clixon-config \
+    rtl83xx-clixon-config-restconf \
+    rtl83xx-network-init \
+    swupdate \
+    swupdate-www \
+"

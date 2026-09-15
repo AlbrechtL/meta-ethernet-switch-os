@@ -1,0 +1,2 @@
+# Consumed by /usr/lib/swupdate/conf.d/10-mongoose-args.
+SWUPDATE_MONGOOSE_EXTRA_ARGS="-p 8080"

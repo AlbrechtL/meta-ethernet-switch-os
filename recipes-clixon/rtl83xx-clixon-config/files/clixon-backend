@@ -1,0 +1,37 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          clixon-backend
+# Required-Start:    $networking
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Clixon configuration backend
+### END INIT INFO
+
+DAEMON=/usr/sbin/clixon_backend
+CONFIG=/etc/clixon.xml
+
+test -x "$DAEMON" || exit 0
+
+case "$1" in
+    start)
+        echo -n "Starting clixon backend: "
+        # Daemonizes by itself (no -F) and writes CLICON_BACKEND_PIDFILE.
+        # The startup mode comes from CLICON_STARTUP_MODE.
+        "$DAEMON" -f "$CONFIG" && echo "clixon_backend."
+        ;;
+    stop)
+        echo -n "Stopping clixon backend: "
+        # -z kills the backend named by CLICON_BACKEND_PIDFILE.
+        "$DAEMON" -f "$CONFIG" -z && echo "clixon_backend."
+        ;;
+    restart)
+        "$0" stop
+        "$0" start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0
