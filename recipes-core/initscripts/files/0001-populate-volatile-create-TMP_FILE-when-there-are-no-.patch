@@ -1,0 +1,28 @@
+Subject: [PATCH] populate-volatile: create TMP_FILE when there are no extra
+ config files
+
+With 00_core as the only file in /etc/default/volatiles, the loop that
+concatenates the remaining config files never runs, so $TMP_FILE is never
+created. check_requirements then fails on every boot with
+
+  grep: /var/volatile/tmp/tmp_volatile.NNN: No such file or directory
+  sed: /var/volatile/tmp/tmp_volatile.NNN: No such file or directory
+  rm: can't remove '/var/volatile/tmp/tmp_volatile.NNN': No such file or directory
+
+Create it empty instead of removing it.
+
+Upstream-Status: Pending
+---
+--- a/populate-volatile.sh
++++ b/populate-volatile.sh
+@@ -250,7 +250,9 @@
+ 	# faster to to concatenate them all together and process them once to
+ 	# avoid the overhead of calling check_requirements repeatedly
+ 	TMP_FILE="${TMPROOT}/tmp_volatile.$$"
+-	rm -f "$TMP_FILE"
++	# The loop below appends nothing when 00_core is the only config file,
++	# and check_requirements would then read a file that does not exist.
++	: > "$TMP_FILE"
+ 
+ 	CFGFILES="$(ls -1 "${CFGDIR}" | grep -v "^${COREDEF}\$" | sort)"
+ 	for file in ${CFGFILES}; do
