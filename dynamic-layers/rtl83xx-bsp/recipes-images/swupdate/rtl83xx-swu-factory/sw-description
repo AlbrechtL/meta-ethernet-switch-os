@@ -1,0 +1,41 @@
+software =
+{
+	version = "@@DISTRO_VERSION@@";
+	description = "RTL83xx factory install: firmware, empty data partition";
+
+	/* Revision field of /etc/hwrevision ("gs1900-8 a1"). */
+	hardware-compatibility: [ "a1" ];
+
+	/*
+	 * Keep "recovery_status" and "ustate" out of the U-Boot environment. The
+	 * stock bootloader does not evaluate them, and every write to u-boot-env,
+	 * which holds bootcmd, is a chance to damage it.
+	 */
+	bootloader_transaction_marker = false;
+	bootloader_state_marker = false;
+
+	rtl83xx = {
+		factory = {
+			images: (
+				{
+					filename = "rtl83xx-image-@@MACHINE@@.rootfs.rtl83xx-fw";
+					type = "flash";
+					mtdname = "firmware";
+					sha256 = "$swupdate_get_sha256(rtl83xx-image-@@MACHINE@@.rootfs.rtl83xx-fw)";
+				},
+				{
+					/* Padded to the whole partition, see image_types_rtl83xx.bbclass. */
+					filename = "rtl83xx-image-@@MACHINE@@.rootfs.rtl83xx-data";
+					type = "flash";
+					mtdname = "data";
+					sha256 = "$swupdate_get_sha256(rtl83xx-image-@@MACHINE@@.rootfs.rtl83xx-data)";
+				}
+			);
+
+			/*
+			 * No bootenv. "bootpartition" lives in u-boot-env2, which is not
+			 * in /etc/fw_env.config; it must already read 0 (boot 0x260000).
+			 */
+		};
+	};
+}

@@ -1,0 +1,25 @@
+software =
+{
+	version = "@@DISTRO_VERSION@@";
+	description = "RTL83xx upgrade: firmware only, data partition kept";
+
+	/* Revision field of /etc/hwrevision ("gs1900-8 a1"). */
+	hardware-compatibility: [ "a1" ];
+
+	/* No writes to the U-Boot environment, see the factory sw-description. */
+	bootloader_transaction_marker = false;
+	bootloader_state_marker = false;
+
+	rtl83xx = {
+		upgrade = {
+			images: (
+				{
+					filename = "rtl83xx-image-@@MACHINE@@.rootfs.rtl83xx-fw";
+					type = "flash";
+					mtdname = "firmware";
+					sha256 = "$swupdate_get_sha256(rtl83xx-image-@@MACHINE@@.rootfs.rtl83xx-fw)";
+				}
+			);
+		};
+	};
+}
