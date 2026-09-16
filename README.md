@@ -1,5 +1,9 @@
 # meta-rtl83xx-distro
 
+> **⚠️ Proof of concept.** This project is a proof of concept, created with
+> the help of AI. It has not undergone thorough review or hardening, and
+> should not be assumed suitable for production use.
+
 Userspace policy for RTL83xx switches, on top of `meta-rtl83xx-bsp`:
 
 - [clixon](https://www.clicon.org/) with the
