@@ -53,6 +53,10 @@ jobs:
             python3-subunit zstd liblz4-tool file locales libacl1
           # bitbake refuses to run without a UTF-8 locale.
           sudo locale-gen en_US.UTF-8
+          # bitbake isolates tasks (no network outside do_fetch) with
+          # unprivileged user namespaces, which Ubuntu 24.04's AppArmor
+          # restricts by default: "User namespaces are not usable by BitBake".
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
       - uses: actions/checkout@v4
         with:
@@ -108,6 +112,9 @@ jobs:
 
           DL_DIR = "/mnt/yocto/downloads"
           SSTATE_DIR = "/mnt/yocto/sstate-cache"
+          # Keep the hash equivalence database with the sstate it describes, so
+          # it is cached with it; inside build/ it would be lost every run.
+          BB_HASHSERVE_DB_DIR = "\${SSTATE_DIR}"
           TMPDIR = "/mnt/yocto/tmp"
 
           # The runner is disk bound long before it is CPU bound.
