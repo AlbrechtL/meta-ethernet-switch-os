@@ -1,7 +1,7 @@
 SUMMARY = "Base userspace for RTL83xx switches"
-DESCRIPTION = "Static br-lan network setup, the clixon YANG management \
-framework with its CLI and RESTCONF, and the SWUpdate daemon with its web \
-interface."
+DESCRIPTION = "The clixon YANG management framework with the clixon-switch \
+backend plugin, which configures the network, its CLI and RESTCONF, and the \
+SWUpdate daemon with its web interface."
 
 # packagegroup.bbclass defaults to allarch, and an allarch packagegroup must not
 # RDEPEND on names the debian class renames per architecture (a package holding
@@ -16,9 +16,8 @@ inherit packagegroup
 
 RDEPENDS:${PN} = " \
     clixon \
-    rtl83xx-clixon-config \
-    rtl83xx-clixon-config-restconf \
-    rtl83xx-network-init \
+    clixon-switch \
+    clixon-switch-restconf \
     swupdate \
     swupdate-www \
 "

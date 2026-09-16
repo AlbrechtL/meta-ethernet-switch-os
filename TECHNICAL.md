@@ -8,15 +8,21 @@ target, and traps worth remembering.
 | Path | Content |
 |---|---|
 | `/etc/clixon.xml` | main config; clixon's compiled-in default, so no `-f` needed |
-| `/etc/clixon/eth-switch/autocli.xml` | limits the generated CLI to the OpenConfig modules |
-| `/usr/lib/eth-switch/clispec/` | `eth-switch_cli.cli` |
-| `/usr/lib/eth-switch/backend/` | empty -- the backend plugin goes here |
-| `/usr/share/eth-switch/yang/` | the main module and its imports |
-| `/var/lib/clixon/eth-switch/` | datastores (RAM, lost on reboot) |
-| `/var/run/eth-switch.sock` | backend socket, group `clicon` |
+| `/etc/clixon/clixon-switch/autocli.xml` | limits the generated CLI to the OpenConfig modules |
+| `/usr/lib/clixon-switch/clispec/` | `clixon-switch_cli.cli` |
+| `/usr/lib/clixon-switch/backend/` | `clixon-switch_backend.so`, the plugin |
+| `/usr/lib/clixon-switch/prepare-datastore` | run by the init script before the backend starts |
+| `/usr/share/clixon-switch/yang/` | the main module and its OpenConfig imports |
+| `/usr/share/clixon-switch/factory-default.xml` | first-boot configuration, and the failsafe |
+| `/var/run/clixon-switch/` | datastores (tmpfs); `startup_db` is a symlink to... |
+| `/var/lib/clixon/clixon-switch/startup_db` | ...the saved configuration (flash, kept on upgrade) |
+| `/var/run/clixon-switch.sock` | backend socket, group `clicon` |
 
-`/etc/init.d/clixon-backend` starts `clixon_backend` in `CLICON_STARTUP_MODE`
-`init`, i.e. with an empty running datastore.
+`/etc/init.d/clixon-backend` (S05, the network comes from it) runs
+`prepare-datastore`, then starts `clixon_backend` in `CLICON_STARTUP_MODE`
+`startup`. The backend commits `startup_db` through the plugin, which creates
+`br-lan`, adds the ports and puts the address on `vlan1`. If that commit
+fails, clixon commits `failsafe_db`, the factory default.
 
 `/etc/init.d/clixon-restconf` starts `clixon_restconf`, which binds port 80 as
 root and then drops to user `clicon`. Its listener is the `<restconf>` block in
@@ -24,25 +30,53 @@ root and then drops to user `clicon`. Its listener is the `<restconf>` block in
 
 ```sh
 curl http://192.168.1.1/restconf/data/openconfig-interfaces:interfaces
-curl -X PUT -H 'Content-Type: application/yang-data+json' \
-    -d '{"openconfig-interfaces:interface":[{"name":"lan1","config":{"name":"lan1"}}]}' \
-    http://192.168.1.1/restconf/data/openconfig-interfaces:interfaces/interface=lan1
+# lan3 into VLAN 20: applied at once, lost on reboot...
+curl -X PATCH -H 'Content-Type: application/yang-data+json' \
+    -d '{"openconfig-vlan:config":{"interface-mode":"ACCESS","access-vlan":20}}' \
+    http://192.168.1.1/restconf/data/openconfig-interfaces:interfaces/interface=lan3/openconfig-if-ethernet:ethernet/openconfig-vlan:switched-vlan/config
+# ...until saved
+curl -X POST -H 'Content-Type: application/yang-data+json' \
+    -d '{"ietf-netconf:input":{"target":{"startup":[null]},"source":{"running":[null]}}}' \
+    http://192.168.1.1/restconf/operations/ietf-netconf:copy-config
 ```
+
+Factory reset: `rm /var/lib/clixon/clixon-switch/startup_db` and reboot.
 
 ## Traps
 
+**Only `startup_db` may live on flash.** clixon rewrites `candidate_db` and
+`running_db` in `CLICON_XMLDB_DIR` on every edit. The directory is therefore
+on tmpfs, and `prepare-datastore` links `startup_db` to the saved file in
+`/var/lib`. A copy-config to startup writes through the link.
+
+**`deviate not-supported` does not reject anything in clixon 7.8.** It only
+skips `must` checks for the node; data for it is still accepted and stored.
+The plugin therefore rejects unimplemented configuration itself when
+validating a commit. clixon also fills YANG defaults into every tree
+(`loopback-mode NONE`, IPv6 defaults, ...), so unimplemented leaves are
+accepted with their default value.
+
 **RESTCONF config lives in `/etc/clixon.xml`, not in the datastore.** The
 reference container sets `CLICON_BACKEND_RESTCONF_PROCESS` so that the backend
-spawns `clixon_restconf` from the `<restconf>` config in `startup_db`. With
-`CLICON_STARTUP_MODE` `init` there is no startup db, so that daemon would never
-start. Here the option is false: an init script starts the daemon, which then
-reads the `<restconf>` block from the config file. `clixon_restconf` has no
-daemon mode of its own, hence `start-stop-daemon -b -m`.
+spawns `clixon_restconf` from the `<restconf>` config in `startup_db`. Here the
+option is false: an init script starts the daemon, which then reads the
+`<restconf>` block from the config file, so the listener cannot be configured
+away over RESTCONF itself. `clixon_restconf` has no daemon mode of its own,
+hence `start-stop-daemon -b -m`.
+
+**`openconfig-if-ip` must stay at 3.7.0 or older.** From 3.8.0 (openconfig/public
+v5.4.0) it imports `openconfig-network-instance`, which pulls BGP, IS-IS, OSPF,
+MPLS and more into clixon's YANG parser. clixon-switch-rs vendors v5.3.0, and
+its `vendor-yang.sh` refuses a closure that contains network-instance.
+
+**Rust on mips is a tier-3 target.** oe-core builds the standard library from
+source for `mips32r2-24kc` musl, but its Rust selftests skip mips, so nothing
+upstream tests it.
 
 **dropbear checks `/etc/shells`.** A user whose login shell is not listed is
 rejected with "User 'cli' has invalid shell, rejected" in syslog, and the client
 only sees a failed password. base-files lists just `/bin/sh`;
-`rtl83xx-clixon-config` appends `/usr/bin/clixon_cli` in its postinst.
+`clixon-switch` appends `/usr/bin/clixon_cli` in its postinst.
 
 **`CLICON_CONFIGDIR` is not recursive.** It loads `*.xml` from exactly that
 directory. The reference container points it at `/usr/local/etc/clixon` while
@@ -71,8 +105,8 @@ busybox stays PID 1. Check after a build that `rootfs/etc/rc5.d` exists.
 **poky-tiny ships no `/etc/init.d/functions`.** The swupdate init script sources
 it and exits silently without it, hence `initd-functions` in its bbappend.
 
-**`eth0` gets no address on purpose.** It is the DSA conduit. The network script
-only sets it up; `init-ifupdown` is a bad recommendation because its default
+**`eth0` gets no address on purpose.** It is the DSA conduit. The plugin only
+sets it up; `init-ifupdown` is a bad recommendation because its default
 `/etc/network/interfaces` would run DHCP on it.
 
 Find the next size offender with `readelf -d` over the rootfs (`NEEDED`

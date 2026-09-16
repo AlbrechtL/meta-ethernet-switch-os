@@ -9,7 +9,7 @@ IMAGE_INSTALL:append = " packagegroup-rtl83xx-base"
 IMAGE_FEATURES += "ssh-server-dropbear"
 
 # "ssh cli@192.168.1.1" lands directly in the clixon CLI: clixon_cli is the
-# login shell (rtl83xx-clixon-config adds it to /etc/shells, which dropbear
+# login shell (clixon-switch adds it to /etc/shells, which dropbear
 # checks) and the clicon group grants access to the backend socket. The empty
 # password is for the proof of concept only.
 inherit extrausers

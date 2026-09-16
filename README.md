@@ -2,13 +2,15 @@
 
 Userspace policy for RTL83xx switches, on top of `meta-rtl83xx-bsp`:
 
-- A boot script bridges `lan1`..`lan8` into `br-lan` with **192.168.1.1/24**
-- [clixon](https://www.clicon.org/) with the eth-switch YANG model from
-  [managed-switch-yang-netconf-cli-docker](https://github.com/AlbrechtL/managed-switch-yang-netconf-cli-docker).
+- [clixon](https://www.clicon.org/) with the
+  [clixon-switch](https://github.com/AlbrechtL/clixon-switch-rs) backend
+  plugin (Rust), which configures the network from an OpenConfig
+  configuration. Factory default: `lan1`..`lan8` as access ports in VLAN 1 of
+  the VLAN-aware bridge `br-lan`, and **192.168.1.1/24** on `vlan1`.
   `ssh cli@192.168.1.1` opens the clixon CLI directly, and RESTCONF answers on
-  **http://192.168.1.1/restconf** (plain HTTP/1, no authentication). There is
-  no backend plugin yet, so configuration is stored in the datastore but not
-  applied.
+  **http://192.168.1.1/restconf** (plain HTTP/1, no authentication). A commit
+  applies a change; only `save` (or a copy-config to startup) makes it survive
+  a reboot.
 - dropbear SSH (`ssh root@192.168.1.1` for a shell). Both `root` and `cli`
   have an empty password via the `core/yocto/root-login-with-empty-password`
   fragment -- proof of concept only.
@@ -54,10 +56,9 @@ These layers (and `meta-rtl83xx-bsp`) are added by hand, not through
 | File | Role |
 |---|---|
 | `conf/distro/rtl83xx-tiny.conf` | poky-tiny + the `sysvinit` script machinery |
-| `recipes-core/packagegroups/packagegroup-rtl83xx-base.bb` | network script, clixon, swupdate |
+| `recipes-core/packagegroups/packagegroup-rtl83xx-base.bb` | clixon with the clixon-switch plugin, swupdate |
 | `dynamic-layers/rtl83xx-bsp/.../rtl83xx-image-common.inc` | the packagegroup, `ssh-server-dropbear` and the `cli` user, required by the `rtl83xx-image-initramfs` and `rtl83xx-image` bbappends |
 | `dynamic-layers/rtl83xx-bsp/recipes-images/swupdate/` | `rtl83xx-swu-factory` and `rtl83xx-swu-upgrade` with their sw-descriptions |
-| `recipes-connectivity/rtl83xx-network-init/` | `/etc/init.d/rtl83xx-network`: static `br-lan` with busybox `ip` |
 | `recipes-clixon/cligen/`, `recipes-clixon/clixon/` | clixon 7.8.0 with native RESTCONF (HTTP/1, no nghttp2) |
-| `recipes-clixon/rtl83xx-clixon-config/` | `/etc/clixon.xml`, clispec, autocli, YANG, init scripts; RESTCONF's in `-restconf` |
+| `recipes-clixon/clixon-switch/` | the backend plugin (cargo) with its YANG, `/etc/clixon.xml`, clispec, autocli and factory default (`RTL_LAN_PORTS`, `RTL_LAN_ADDRESS`); init scripts, RESTCONF's in `-restconf` |
 | `recipes-support/swupdate/` | kconfig fragment (U-Boot env, MTD flash handler), web port, `/etc/hwrevision`, `20-rtl83xx-mode` (software set selection, SWUpdate from RAM) |

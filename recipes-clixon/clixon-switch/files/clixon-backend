@@ -1,22 +1,28 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          clixon-backend
-# Required-Start:    $networking
+# Provides:          clixon-backend networking
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Clixon configuration backend
+# Short-Description: clixon configuration backend, which configures the network
 ### END INIT INFO
 
 DAEMON=/usr/sbin/clixon_backend
 CONFIG=/etc/clixon.xml
+APP=clixon-switch
 
 test -x "$DAEMON" || exit 0
 
 case "$1" in
     start)
+        # Datastores in /var/run (tmpfs), startup_db linked to the saved
+        # configuration in /var/lib (flash), which starts out as the factory
+        # default. See prepare-datastore.
+        /usr/lib/$APP/prepare-datastore /var/run/$APP /var/lib/clixon/$APP \
+            /usr/share/$APP/factory-default.xml
         echo -n "Starting clixon backend: "
         # Daemonizes by itself (no -F) and writes CLICON_BACKEND_PIDFILE.
-        # The startup mode comes from CLICON_STARTUP_MODE.
+        # It commits startup_db, or failsafe_db if that fails, through the
+        # plugin, which sets up the bridge and the management address.
         "$DAEMON" -f "$CONFIG" && echo "clixon_backend."
         ;;
     stop)
