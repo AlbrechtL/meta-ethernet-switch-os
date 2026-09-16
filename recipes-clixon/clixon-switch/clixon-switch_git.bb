@@ -1,9 +1,9 @@
 SUMMARY = "clixon backend plugin for the switch configuration"
 DESCRIPTION = "Rust clixon backend plugin that applies the OpenConfig switch \
 configuration to the kernel: front ports in a VLAN-aware bridge, and routed \
-VLAN interfaces with IPv4 addresses. Also installs the YANG modules, \
-clixon.xml, the CLI specification, the factory default and init scripts for \
-the backend and RESTCONF."
+VLAN interfaces with static IPv4 addresses or a DHCP client (busybox udhcpc). \
+Also installs the YANG modules, clixon.xml, the CLI specification, the factory \
+default, the udhcpc script and init scripts for the backend and RESTCONF."
 HOMEPAGE = "https://github.com/AlbrechtL/clixon-switch-rs"
 # The repository and the OpenConfig modules are Apache-2.0, the IETF/IANA
 # modules BSD-2-Clause (license text in each module header).
@@ -16,7 +16,7 @@ SRC_URI = " \
     file://clixon-restconf \
 "
 # Update together with the crate list: bitbake -c update_crates clixon-switch
-SRCREV = "a1389f3377789220c9349809c5ebc1e4159c46c3"
+SRCREV = "568f91ac135c5820b7946351e33ce0793a0509f1"
 PV = "0.1.0+git"
 
 require ${BPN}-crates.inc
@@ -52,6 +52,10 @@ do_install() {
     install -d ${D}${sysconfdir}/init.d
     install -m 0755 ${UNPACKDIR}/clixon-backend ${D}${sysconfdir}/init.d/
     install -m 0755 ${UNPACKDIR}/clixon-restconf ${D}${sysconfdir}/init.d/
+
+    # The DHCP client's script rewrites resolv.conf on every lease renewal.
+    # It follows this symlink, so that happens on tmpfs, not on flash.
+    ln -sf ${localstatedir}/run/resolv.conf ${D}${sysconfdir}/resolv.conf
 }
 
 # dropbear rejects logins whose shell is not in /etc/shells, and the "cli" user
@@ -66,11 +70,13 @@ PACKAGES =+ "${PN}-restconf"
 FILES:${PN}-restconf = "${sysconfdir}/init.d/clixon-restconf"
 
 FILES:${PN} += " \
+    ${sysconfdir}/resolv.conf \
     ${libdir}/clixon-switch \
     ${datadir}/clixon-switch \
     ${localstatedir}/lib/clixon \
 "
 
+# base-utils (busybox) also provides udhcpc and ip for the DHCP client.
 RDEPENDS:${PN} = "clixon base-files ${VIRTUAL-RUNTIME_base-utils}"
 RDEPENDS:${PN}-restconf = "${PN}"
 

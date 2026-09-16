@@ -30,10 +30,18 @@ root and then drops to user `clicon`. Its listener is the `<restconf>` block in
 
 ```sh
 curl http://192.168.1.1/restconf/data/openconfig-interfaces:interfaces
-# lan3 into VLAN 20: applied at once, lost on reboot...
+# lan3 into VLAN 20, which has to be declared first: applied at once, lost
+# on reboot...
+curl -X PATCH -H 'Content-Type: application/yang-data+json' \
+    -d '{"clixon-switch:vlans":{"vlan":[{"vlan-id":20,"config":{"vlan-id":20}}]}}' \
+    http://192.168.1.1/restconf/data/clixon-switch:vlans
 curl -X PATCH -H 'Content-Type: application/yang-data+json' \
     -d '{"openconfig-vlan:config":{"interface-mode":"ACCESS","access-vlan":20}}' \
     http://192.168.1.1/restconf/data/openconfig-interfaces:interfaces/interface=lan3/openconfig-if-ethernet:ethernet/openconfig-vlan:switched-vlan/config
+# DHCP client on vlan1, next to the static address
+curl -X PATCH -H 'Content-Type: application/yang-data+json' \
+    -d '{"openconfig-if-ip:ipv4":{"config":{"dhcp-client":true}}}' \
+    http://192.168.1.1/restconf/data/openconfig-interfaces:interfaces/interface=vlan1/openconfig-vlan:routed-vlan/openconfig-if-ip:ipv4
 # ...until saved
 curl -X POST -H 'Content-Type: application/yang-data+json' \
     -d '{"ietf-netconf:input":{"target":{"startup":[null]},"source":{"running":[null]}}}' \
@@ -108,6 +116,16 @@ it and exits silently without it, hence `initd-functions` in its bbappend.
 **`eth0` gets no address on purpose.** It is the DSA conduit. The plugin only
 sets it up; `init-ifupdown` is a bad recommendation because its default
 `/etc/network/interfaces` would run DHCP on it.
+
+**DHCP addresses are told apart by their lifetime.** The plugin reconciles
+the kernel with the configuration and removes addresses it does not know.
+The udhcpc script (clixon-switch-rs `scripts/udhcpc-script.sh`) adds the
+leased address with `valid_lft`/`preferred_lft` set to the lease time.
+The kernel then does not flag it `IFA_F_PERMANENT`, and the plugin keeps
+such addresses on the interface that runs the DHCP client. The plugin, not an
+init script, starts and stops udhcpc, because only the plugin knows whether
+the running configuration has `dhcp-client` set. `/etc/resolv.conf` is a
+symlink into `/var/run`, so lease renewals do not write to flash.
 
 Find the next size offender with `readelf -d` over the rootfs (`NEEDED`
 entries) rather than grepping pkgdata.

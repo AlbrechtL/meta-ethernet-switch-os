@@ -9,6 +9,10 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 # busybox.inc.
 SRC_URI += "file://ethernet-switch-os-initscripts.cfg"
 
+# Applets nothing uses: the DHCP server with dumpleases, and the DHCPv6 client
+# (IPv6 is not supported). udhcpc, the DHCPv4 client, stays.
+SRC_URI += "file://ethernet-switch-os-dhcp.cfg"
+
 # Replaces oe-core's /etc/init.d/mdev (same name, found first through
 # FILESEXTRAPATHS). The only change: module coldplug is skipped when there is
 # no module tree, which is always the case here -- the rtl83xx kernel is built
