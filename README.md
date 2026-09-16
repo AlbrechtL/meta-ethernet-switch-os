@@ -91,3 +91,4 @@ them in step with the table above.
 | `recipes-clixon/cligen/`, `recipes-clixon/clixon/` | clixon 7.8.0 with native RESTCONF (HTTP/1, no nghttp2) |
 | `recipes-clixon/clixon-switch/` | the backend plugin (cargo) with its YANG, `/etc/clixon.xml`, clispec, autocli and factory default (`ETHERNET_SWITCH_OS_LAN_PORTS`, `ETHERNET_SWITCH_OS_LAN_ADDRESS`); init scripts, RESTCONF's in `-restconf` |
 | `recipes-support/swupdate/` | kconfig fragment (U-Boot env, MTD flash handler), web port, `/etc/hwrevision`, `20-ethernet-switch-os-mode` (software set selection, SWUpdate from RAM) |
+| `recipes-core/base-files/` | login banner (`/etc/issue`, `/etc/issue.net`, `/etc/motd`) pointing at `clixon_cli`, overriding oe-core/poky's via the `ethernet-switch-os` `FILESEXTRAPATHS` override |
