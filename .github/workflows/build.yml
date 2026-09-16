@@ -1,0 +1,152 @@
+name: Build images
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+# Layer revisions. Keep these in step with the "Layers" table in README.md --
+# that table is what a manual checkout follows, this is what CI follows.
+env:
+  BITBAKE_REV: 0ad6c1c34a5e07a5f8dd66ab248c1e7b37b69fa9
+  OE_CORE_REV: 9da814ca3685ada3fce46b8987f04ed3d57247b7
+  META_YOCTO_REV: 1b132647002eea43a2c7a7f857f63f42dacbc26c
+  META_OE_REV: 14282a02be9c74a1276a7cda7d6c89e054699a11
+  META_SWUPDATE_REV: c0658455606b3a37d85d7cf03703d8b8d2ead667
+  # The BSP moves together with this layer, so it tracks a branch rather than a
+  # revision. Override it from the Actions tab to build against a BSP branch.
+  BSP_REF: master
+  MACHINE: zyxel-gs1900-8-a1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # A cold build is a full toolchain, kernel and Rust cross-compile; the
+    # 6 hour job limit is the real ceiling.
+    timeout-minutes: 350
+
+    steps:
+      # The runner's root filesystem is far too small for a Yocto TMPDIR. The
+      # ephemeral disk at /mnt has room; everything heavy is put there.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost /usr/local/lib/node_modules \
+                      "$AGENT_TOOLSDIRECTORY"
+          sudo mkdir -p /mnt/yocto
+          sudo chown "$USER:$USER" /mnt/yocto
+          df -h / /mnt
+
+      - name: Install host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gawk wget git diffstat unzip texinfo gcc build-essential chrpath \
+            socat cpio python3 python3-pip python3-pexpect xz-utils \
+            debianutils iputils-ping python3-git python3-jinja2 \
+            python3-subunit zstd liblz4-tool file locales libacl1
+          # bitbake refuses to run without a UTF-8 locale.
+          sudo locale-gen en_US.UTF-8
+
+      - uses: actions/checkout@v4
+        with:
+          path: layers/meta-ethernet-switch-os
+
+      - name: Clone the other layers
+        run: |
+          set -eu
+          clone() { # $1 = uri, $2 = directory, $3 = revision or branch
+            git clone --quiet "$1" "layers/$2"
+            git -C "layers/$2" checkout --quiet --detach "$3"
+          }
+          clone https://git.openembedded.org/bitbake            bitbake            "$BITBAKE_REV"
+          clone https://git.openembedded.org/openembedded-core  openembedded-core  "$OE_CORE_REV"
+          clone https://git.yoctoproject.org/meta-yocto         meta-yocto         "$META_YOCTO_REV"
+          clone https://github.com/openembedded/meta-openembedded meta-openembedded "$META_OE_REV"
+          clone https://github.com/sbabic/meta-swupdate         meta-swupdate      "$META_SWUPDATE_REV"
+          clone https://github.com/AlbrechtL/meta-rtl83xx-bsp   meta-rtl83xx-bsp   "origin/$BSP_REF"
+
+      # Downloads and sstate are what make a rerun cheap. GitHub evicts caches
+      # least-recently-used past 10 GB per repository, so treat a miss as
+      # normal: the build is correct either way, just slower.
+      - name: Restore downloads and sstate
+        uses: actions/cache@v4
+        with:
+          path: |
+            /mnt/yocto/downloads
+            /mnt/yocto/sstate-cache
+          key: yocto-${{ env.MACHINE }}-${{ env.OE_CORE_REV }}-${{ github.sha }}
+          restore-keys: |
+            yocto-${{ env.MACHINE }}-${{ env.OE_CORE_REV }}-
+            yocto-${{ env.MACHINE }}-
+
+      - name: Configure the build
+        run: |
+          set -eu
+          mkdir -p build/conf
+          cat > build/conf/bblayers.conf <<EOF
+          BBLAYERS ?= " \\
+            $PWD/layers/openembedded-core/meta \\
+            $PWD/layers/meta-yocto/meta-poky \\
+            $PWD/layers/meta-openembedded/meta-oe \\
+            $PWD/layers/meta-swupdate \\
+            $PWD/layers/meta-rtl83xx-bsp \\
+            $PWD/layers/meta-ethernet-switch-os \\
+            "
+          EOF
+          # Same fragments the local build selects through bitbake-config-build:
+          # OE_FRAGMENTS is read from local.conf before bitbake.conf expands it.
+          cat > build/conf/local.conf <<EOF
+          OE_FRAGMENTS += "core/yocto/root-login-with-empty-password"
+          OE_FRAGMENTS += "machine/$MACHINE distro/ethernet-switch-os"
+
+          DL_DIR = "/mnt/yocto/downloads"
+          SSTATE_DIR = "/mnt/yocto/sstate-cache"
+          TMPDIR = "/mnt/yocto/tmp"
+
+          # The runner is disk bound long before it is CPU bound.
+          INHERIT += "rm_work"
+          EOF
+
+      - name: Build
+        run: |
+          set -eu
+          export TEMPLATECONF=
+          . layers/openembedded-core/oe-init-build-env "$PWD/build" > /dev/null
+          bitbake ethernet-switch-os-swu-factory ethernet-switch-os-swu-upgrade
+
+      # The deliverables: the two .swu packages and the TFTP boot image, under
+      # their stable symlink names. cp -L because they are symlinks into the
+      # same directory and upload-artifact would otherwise store dangling links.
+      - name: Collect images
+        if: success()
+        run: |
+          set -eu
+          deploy="/mnt/yocto/tmp/deploy/images/$MACHINE"
+          mkdir -p artifacts
+          cp -L "$deploy"/ethernet-switch-os-swu-factory-"$MACHINE".swu artifacts/
+          cp -L "$deploy"/ethernet-switch-os-swu-upgrade-"$MACHINE".swu artifacts/
+          cp -L "$deploy"/ethernet-switch-os-initramfs-"$MACHINE".bin artifacts/
+          cp -L "$deploy"/ethernet-switch-os-initramfs-"$MACHINE"-rt-loader.bin artifacts/
+          ls -l artifacts
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: ethernet-switch-os-${{ env.MACHINE }}
+          path: artifacts/
+          if-no-files-found: error
+
+      # bitbake's own logs are the only way to tell why a task failed once the
+      # runner is gone.
+      - name: Upload failure logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            /mnt/yocto/tmp/log/
+            /mnt/yocto/tmp/work/*/*/*/temp/log.do_*
+          if-no-files-found: ignore
+          retention-days: 7

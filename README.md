@@ -47,6 +47,7 @@ bitbake-layers add-layer ../layers/meta-openembedded/meta-oe \
     ../layers/meta-swupdate ../layers/meta-ethernet-switch-os
 bitbake-config-build disable-fragment distro/poky-tiny
 bitbake-config-build enable-fragment distro/ethernet-switch-os
+bitbake-config-build enable-fragment machine/zyxel-gs1900-8-a1
 ```
 
 `meta-python` and `meta-networking` are no longer required (they were for
@@ -55,6 +56,29 @@ NetworkManager); leaving them in `bblayers.conf` is harmless.
 These layers (and `meta-rtl83xx-bsp`) are added by hand, not through
 `config/config-upstream.json`, so a `bitbake-setup update` that regenerates
 `bblayers.conf` drops them again.
+
+## Built images
+
+```sh
+bitbake ethernet-switch-os-swu-factory ethernet-switch-os-swu-upgrade
+```
+
+lands in `build/tmp/deploy/images/zyxel-gs1900-8-a1/`:
+
+| File | What it is for |
+|---|---|
+| `ethernet-switch-os-initramfs-zyxel-gs1900-8-a1.bin` | TFTP boot image; the first install and recovery run entirely from RAM. |
+| `ethernet-switch-os-swu-factory-zyxel-gs1900-8-a1.swu` | First install, uploaded from the TFTP initramfs. Writes `firmware`, wipes `data`. |
+| `ethernet-switch-os-swu-upgrade-zyxel-gs1900-8-a1.swu` | Update in place. Rewrites `firmware`, keeps `data`. |
+
+The boot images carry `${DISTRO}` and `${MACHINE}`, so they say which OS
+and which board they are for. See the image table in `meta-rtl83xx-bsp`'s
+README for the intermediate artifacts.
+
+`.github/workflows/build.yml` builds exactly these on every push to
+`master` and on pull requests, and uploads them as a job artifact. The
+layer revisions it clones are pinned in the workflow's `env:` block; keep
+them in step with the table above.
 
 ## Contents
 
