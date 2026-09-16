@@ -1,4 +1,4 @@
-# meta-rtl83xx-distro — technical notes
+# meta-ethernet-switch-os — technical notes
 
 Deep-dive background for [README.md](README.md): the clixon layout on the
 target, and traps worth remembering.
@@ -99,7 +99,7 @@ checkout has no tags.
 **poky-tiny has no `sysvinit` distro feature, and nothing starts without it.**
 `update-rc.d.bbclass` only creates `/etc/rc*.d` links when the feature is set.
 The image still builds without complaint; the result is a rootfs with every
-daemon present and none running. `rtl83xx-tiny` appends `sysvinit`, while
+daemon present and none running. `ethernet-switch-os` appends `sysvinit`, while
 busybox stays PID 1. Check after a build that `rootfs/etc/rc5.d` exists.
 
 **poky-tiny ships no `/etc/init.d/functions`.** The swupdate init script sources

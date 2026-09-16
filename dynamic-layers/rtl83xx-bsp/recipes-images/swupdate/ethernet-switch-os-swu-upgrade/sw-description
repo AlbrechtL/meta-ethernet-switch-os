@@ -10,7 +10,7 @@ software =
 	bootloader_transaction_marker = false;
 	bootloader_state_marker = false;
 
-	rtl83xx = {
+	ethernet-switch-os = {
 		upgrade = {
 			images: (
 				{

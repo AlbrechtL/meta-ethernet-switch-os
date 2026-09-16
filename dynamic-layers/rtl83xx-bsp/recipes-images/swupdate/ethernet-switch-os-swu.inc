@@ -1,7 +1,8 @@
-# Common part of the RTL83xx .swu recipes. The images come from rtl83xx-image
+# Common part of the .swu recipes. The images come from rtl83xx-image
 # (meta-rtl83xx-bsp, image_types_rtl83xx.bbclass); each recipe ships its own
-# sw-description with one software set, rtl83xx.factory or rtl83xx.upgrade,
-# which /etc/swupdate/conf.d/20-rtl83xx-mode selects on the target.
+# sw-description with one software set, ethernet-switch-os.factory or
+# ethernet-switch-os.upgrade, which
+# /etc/swupdate/conf.d/20-ethernet-switch-os-mode selects on the target.
 
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"

@@ -1,4 +1,4 @@
-SUMMARY = "Base userspace for RTL83xx switches"
+SUMMARY = "Base userspace for Ethernet switches"
 DESCRIPTION = "The clixon YANG management framework with the clixon-switch \
 backend plugin, which configures the network, its CLI and RESTCONF, and the \
 SWUpdate daemon with its web interface."

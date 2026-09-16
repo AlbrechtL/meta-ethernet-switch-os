@@ -1,4 +1,4 @@
-# meta-rtl83xx-distro
+# meta-ethernet-switch-os
 
 > **⚠️ Proof of concept.** This project is a proof of concept, created with
 > the help of AI. It has not undergone thorough review or hardening, and
@@ -19,9 +19,10 @@ Userspace policy for RTL83xx switches, on top of `meta-rtl83xx-bsp`:
   have an empty password via the `core/yocto/root-login-with-empty-password`
   fragment -- proof of concept only.
 - SWUpdate daemon with its web UI on **http://192.168.1.1:8080**, plus two
-  .swu images for the BSP's flash layout: `rtl83xx-swu-factory` (first
-  install from the TFTP initramfs) and `rtl83xx-swu-upgrade` (update in
-  place, user data kept). See "Flash image" in `meta-rtl83xx-bsp`'s README.
+  .swu images for the BSP's flash layout: `ethernet-switch-os-swu-factory`
+  (first install from the TFTP initramfs) and
+  `ethernet-switch-os-swu-upgrade` (update in place, user data kept).
+  See "Flash image" in `meta-rtl83xx-bsp`'s README.
 
 No NetworkManager, D-Bus, udev or systemd: busybox is init and mdev.
 
@@ -43,9 +44,9 @@ git clone -b wrynose https://git.openembedded.org/meta-openembedded
 git clone -b wrynose https://github.com/sbabic/meta-swupdate
 cd ../build && . init-build-env
 bitbake-layers add-layer ../layers/meta-openembedded/meta-oe \
-    ../layers/meta-swupdate ../layers/meta-rtl83xx-distro
+    ../layers/meta-swupdate ../layers/meta-ethernet-switch-os
 bitbake-config-build disable-fragment distro/poky-tiny
-bitbake-config-build enable-fragment distro/rtl83xx-tiny
+bitbake-config-build enable-fragment distro/ethernet-switch-os
 ```
 
 `meta-python` and `meta-networking` are no longer required (they were for
@@ -59,10 +60,10 @@ These layers (and `meta-rtl83xx-bsp`) are added by hand, not through
 
 | File | Role |
 |---|---|
-| `conf/distro/rtl83xx-tiny.conf` | poky-tiny + the `sysvinit` script machinery |
-| `recipes-core/packagegroups/packagegroup-rtl83xx-base.bb` | clixon with the clixon-switch plugin, swupdate |
-| `dynamic-layers/rtl83xx-bsp/.../rtl83xx-image-common.inc` | the packagegroup, `ssh-server-dropbear` and the `cli` user, required by the `rtl83xx-image-initramfs` and `rtl83xx-image` bbappends |
-| `dynamic-layers/rtl83xx-bsp/recipes-images/swupdate/` | `rtl83xx-swu-factory` and `rtl83xx-swu-upgrade` with their sw-descriptions |
+| `conf/distro/ethernet-switch-os.conf` | poky-tiny + the `sysvinit` script machinery |
+| `recipes-core/packagegroups/packagegroup-ethernet-switch-os-base.bb` | clixon with the clixon-switch plugin, swupdate |
+| `dynamic-layers/rtl83xx-bsp/.../ethernet-switch-os-image-common.inc` | the packagegroup, `ssh-server-dropbear` and the `cli` user, required by the `rtl83xx-image-initramfs` and `rtl83xx-image` bbappends |
+| `dynamic-layers/rtl83xx-bsp/recipes-images/swupdate/` | `ethernet-switch-os-swu-factory` and `ethernet-switch-os-swu-upgrade` with their sw-descriptions |
 | `recipes-clixon/cligen/`, `recipes-clixon/clixon/` | clixon 7.8.0 with native RESTCONF (HTTP/1, no nghttp2) |
-| `recipes-clixon/clixon-switch/` | the backend plugin (cargo) with its YANG, `/etc/clixon.xml`, clispec, autocli and factory default (`RTL_LAN_PORTS`, `RTL_LAN_ADDRESS`); init scripts, RESTCONF's in `-restconf` |
-| `recipes-support/swupdate/` | kconfig fragment (U-Boot env, MTD flash handler), web port, `/etc/hwrevision`, `20-rtl83xx-mode` (software set selection, SWUpdate from RAM) |
+| `recipes-clixon/clixon-switch/` | the backend plugin (cargo) with its YANG, `/etc/clixon.xml`, clispec, autocli and factory default (`ETHERNET_SWITCH_OS_LAN_PORTS`, `ETHERNET_SWITCH_OS_LAN_ADDRESS`); init scripts, RESTCONF's in `-restconf` |
+| `recipes-support/swupdate/` | kconfig fragment (U-Boot env, MTD flash handler), web port, `/etc/hwrevision`, `20-ethernet-switch-os-mode` (software set selection, SWUpdate from RAM) |

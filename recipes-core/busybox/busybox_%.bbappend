@@ -7,7 +7,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 # no RTC, sets the clock to it with "date MMDDhhmmYYYY.ss", which busybox only
 # accepts with FEATURE_DATE_COMPAT. Merged over the defconfig by find_cfgs in
 # busybox.inc.
-SRC_URI += "file://rtl83xx-initscripts.cfg"
+SRC_URI += "file://ethernet-switch-os-initscripts.cfg"
 
 # Replaces oe-core's /etc/init.d/mdev (same name, found first through
 # FILESEXTRAPATHS). The only change: module coldplug is skipped when there is

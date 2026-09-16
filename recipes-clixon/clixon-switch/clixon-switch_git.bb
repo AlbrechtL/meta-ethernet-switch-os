@@ -30,8 +30,8 @@ CARGO_BUILD_FLAGS += "-p clixon-switch-plugin"
 
 # Factory default: front ports as labelled by SWITCH_PORT() in the device
 # tree, and the management address on vlan1.
-RTL_LAN_PORTS ?= "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8"
-RTL_LAN_ADDRESS ?= "192.168.1.1/24"
+ETHERNET_SWITCH_OS_LAN_PORTS ?= "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8"
+ETHERNET_SWITCH_OS_LAN_ADDRESS ?= "192.168.1.1/24"
 
 do_install() {
     # The Makefile writes generated files to BUILDDIR only, so S stays
@@ -44,8 +44,8 @@ do_install() {
         DATADIR=${datadir} \
         LOCALSTATEDIR=${localstatedir} \
         RESTCONF_PORT=80 \
-        LAN_PORTS="${RTL_LAN_PORTS}" \
-        LAN_ADDRESS="${RTL_LAN_ADDRESS}" \
+        LAN_PORTS="${ETHERNET_SWITCH_OS_LAN_PORTS}" \
+        LAN_ADDRESS="${ETHERNET_SWITCH_OS_LAN_ADDRESS}" \
         BUILDDIR=${B}/make \
         PLUGIN=${B}/target/${CARGO_TARGET_SUBDIR}/libclixon_switch_plugin.so
 

@@ -4,8 +4,8 @@
 # Sourced by /usr/lib/swupdate/swupdate.sh after 10-mongoose-args, so
 # SWUPDATE_WEBSERVER_ARGS already holds "-r /www ${SWUPDATE_MONGOOSE_EXTRA_ARGS}".
 #
-#   TFTP initramfs  rtl83xx,factory  writes "firmware" and wipes "data"
-#   flash system    rtl83xx,upgrade  writes "firmware", keeps "data"
+#   TFTP initramfs  ethernet-switch-os,factory  writes "firmware", wipes "data"
+#   flash system    ethernet-switch-os,upgrade  writes "firmware", keeps "data"
 #
 # Uploading the other kind of .swu fails with "no software set found".
 
@@ -13,7 +13,7 @@ if ! grep -q '^overlay / overlay ' /proc/mounts; then
     # SWUpdate never reboots on its own: "reboot_enabled" only makes the web UI
     # say "Restarting system." and run the -p command. Without -p nothing
     # happens. The initramfs lives in RAM, so a regular reboot is fine here.
-    SWUPDATE_ARGS="$SWUPDATE_ARGS -e rtl83xx,factory -p /sbin/reboot"
+    SWUPDATE_ARGS="$SWUPDATE_ARGS -e ethernet-switch-os,factory -p /sbin/reboot"
 else
     # An upgrade overwrites the squashfs that swupdate, its libraries and the
     # web UI are loaded from, and the kernel may drop and re-read those pages
@@ -55,7 +55,7 @@ else
     reboot_job="$busybox sleep 2; kill $$; $busybox sleep 2; $busybox sync; $busybox reboot -f"
 
     exec $ramloader --library-path $ram/lib $ram/swupdate \
-        $SWUPDATE_ARGS -e rtl83xx,upgrade \
+        $SWUPDATE_ARGS -e ethernet-switch-os,upgrade \
         -w "-r $ram/www ${SWUPDATE_MONGOOSE_EXTRA_ARGS}" \
         -p "$busybox setsid $busybox sh -c '$reboot_job' </dev/null >/dev/null 2>&1 &"
 fi

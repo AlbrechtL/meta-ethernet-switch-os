@@ -2,7 +2,7 @@
 # factory installer, and the flashable squashfs image. Both carry the same
 # packages, so a factory install and the system it installs look alike.
 
-IMAGE_INSTALL:append = " packagegroup-rtl83xx-base"
+IMAGE_INSTALL:append = " packagegroup-ethernet-switch-os-base"
 
 # Pulls in packagegroup-core-ssh-dropbear. The root-login-with-empty-password
 # fragment's allow-empty-password makes dropbear accept empty passwords (-B).
