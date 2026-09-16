@@ -11,12 +11,11 @@ LICENSE = "Apache-2.0 & BSD-2-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=89aea4e17d99a7cacdbeed46a0096b10"
 
 SRC_URI = " \
-    git://github.com/AlbrechtL/clixon-switch-rs.git;protocol=https;branch=main \
+    git://github.com/AlbrechtL/clixon-switch-rs.git;protocol=https;branch=master \
     file://clixon-backend \
     file://clixon-restconf \
 "
-# The repository is not published yet, so this revision is only fetchable
-# from a local checkout (devtool modify -n clixon-switch <path>).
+# Update together with the crate list: bitbake -c update_crates clixon-switch
 SRCREV = "a1389f3377789220c9349809c5ebc1e4159c46c3"
 PV = "0.1.0+git"
 
