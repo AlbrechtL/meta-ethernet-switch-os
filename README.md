@@ -41,7 +41,7 @@ known traps/pitfalls.
 
 | Layer | Branch | Pinned at |
 |---|---|---|
-| meta-openembedded (`meta-oe`, `meta-networking`) | wrynose | `14282a02be9c74a1276a7cda7d6c89e054699a11` |
+| meta-openembedded (`meta-oe`, `meta-python`, `meta-networking`) | wrynose | `14282a02be9c74a1276a7cda7d6c89e054699a11` |
 | meta-swupdate (`https://github.com/sbabic/meta-swupdate`) | wrynose | `c0658455606b3a37d85d7cf03703d8b8d2ead667` |
 
 ```sh
@@ -50,6 +50,7 @@ git clone -b wrynose https://git.openembedded.org/meta-openembedded
 git clone -b wrynose https://github.com/sbabic/meta-swupdate
 cd ../build && . init-build-env
 bitbake-layers add-layer ../layers/meta-openembedded/meta-oe \
+    ../layers/meta-openembedded/meta-python \
     ../layers/meta-openembedded/meta-networking \
     ../layers/meta-swupdate ../layers/meta-ethernet-switch-os
 bitbake-config-build disable-fragment distro/poky-tiny
@@ -57,8 +58,10 @@ bitbake-config-build enable-fragment distro/ethernet-switch-os
 bitbake-config-build enable-fragment machine/zyxel-gs1900-8-a1
 ```
 
-`meta-networking` provides net-snmp. `meta-python` is no longer required (it
-was for NetworkManager); leaving it in `bblayers.conf` is harmless.
+`meta-networking` provides net-snmp. Nothing here builds from `meta-python`,
+but `meta-networking` declares it in `LAYERDEPENDS`, so it has to be enabled
+too or parsing stops with "layer 'networking-layer' depends on layer
+'meta-python'".
 
 These layers (and `meta-rtl83xx-bsp`) are added by hand, not through
 `config/config-upstream.json`, so a `bitbake-setup update` that regenerates
