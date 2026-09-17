@@ -20,7 +20,7 @@ SRC_URI = " \
     file://clixon-restconf \
 "
 # Update together with the crate list: bitbake -c update_crates clixon-switch
-SRCREV = "04f4d0a833651a3e9f42393ff0ce27c500eef631"
+SRCREV = "6ab90e9986d15661e5d4ae007bf5c3d69600586b"
 PV = "0.1.0+git"
 
 require ${BPN}-crates.inc
