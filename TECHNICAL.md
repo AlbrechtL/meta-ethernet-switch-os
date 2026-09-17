@@ -15,6 +15,7 @@ target, and traps worth remembering.
 | `/sbin/bridge-stp` | link to `/usr/lib/clixon-switch/bridge-stp`, run by the kernel when spanning tree is switched on |
 | `/usr/sbin/mstpd`, `/usr/sbin/mstpctl` | spanning tree daemon, started by the plugin while `/stp` enables a protocol |
 | `/usr/share/clixon-switch/yang/` | the main module and its OpenConfig imports |
+| `/usr/share/clixon-switch/www/` | status page (`index.html`, `app.js`, `style.css`), served at `/` by `clixon_restconf` |
 | `/usr/share/clixon-switch/factory-default.xml` | first-boot configuration, and the failsafe |
 | `/var/run/clixon-switch/` | datastores (tmpfs); `startup_db` is a symlink to... |
 | `/var/lib/clixon/clixon-switch/startup_db` | ...the saved configuration (flash, kept on upgrade) |
@@ -51,6 +52,39 @@ curl -X POST -H 'Content-Type: application/yang-data+json' \
 ```
 
 Factory reset: `rm /var/lib/clixon/clixon-switch/startup_db` and reboot.
+
+## Status web page
+
+`clixon_restconf` also serves static files (clixon's `http-data` feature:
+`CLICON_HTTP_DATA_ROOT` and `<enable-http-data>` in `/etc/clixon.xml`), so
+**http://192.168.1.1/** shows a status page on the same origin as
+`/restconf`, which is matched first. The page is plain JavaScript that only
+GETs RESTCONF data; `/system/state` of `clixon-switch` (host name, firmware
+version from `/etc/os-release`, uptime, load, memory) exists for it. Its
+"Firmware update" button opens the SWUpdate web UI on port 8080.
+
+SWUpdate's mongoose was not reused for the page: a page on :8080 calling
+RESTCONF on :80 is cross-origin, and neither server sends CORS headers or
+can proxy. http-data serves GET/HEAD only, does not follow symbolic links,
+and sends anything but html, css, js, svg, ico and fonts as
+`application/octet-stream`.
+
+**No user management yet.** Everyone who reaches the switch can read the
+page, configure over RESTCONF and upload firmware. The intended design:
+
+- RESTCONF: `auth-type user` without `allow-auth-none`, a restconf plugin
+  whose `ca_auth` callback checks HTTP Basic credentials (see clixon's
+  `example/main/example_restconf.c`), and NACM (`CLICON_NACM_MODE internal`)
+  with an admin group (read-write) and a read-only group. The page, being
+  http-data, gets the same login.
+- SWUpdate: mongoose's digest authentication (`--auth-domain`,
+  `--global-auth-file` in `SWUPDATE_MONGOOSE_EXTRA_ARGS` or
+  `/etc/swupdate.cfg`) with admins only. It is all-or-nothing, and **fails
+  open**: without a readable password file every request is let in
+  (`mongoose/mongoose_interface.c`), so startup has to refuse to run the web
+  server without one.
+- TLS on RESTCONF along with it: Basic authentication over plain HTTP sends
+  the password in clear.
 
 ## Traps
 

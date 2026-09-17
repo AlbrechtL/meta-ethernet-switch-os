@@ -4,7 +4,8 @@ configuration to the kernel: front ports in a VLAN-aware bridge, routed \
 VLAN interfaces with static IPv4 addresses or a DHCP client (busybox udhcpc), \
 and spanning tree (STP, RSTP, MSTP) with mstpd. \
 Also installs the YANG modules, clixon.xml, the CLI specification, the factory \
-default, the udhcpc script and init scripts for the backend and RESTCONF."
+default, the udhcpc script, init scripts for the backend and RESTCONF, and \
+a read-only status web page that clixon_restconf serves on its own port."
 HOMEPAGE = "https://github.com/AlbrechtL/clixon-switch-rs"
 # The repository and the OpenConfig modules are Apache-2.0, the IETF/IANA
 # modules BSD-2-Clause (license text in each module header).
@@ -17,7 +18,7 @@ SRC_URI = " \
     file://clixon-restconf \
 "
 # Update together with the crate list: bitbake -c update_crates clixon-switch
-SRCREV = "76642776fa237cacec2212adaf644931014ad3ef"
+SRCREV = "61e7ab015f68d468e528501f395788d1d212ea67"
 PV = "0.1.0+git"
 
 require ${BPN}-crates.inc
@@ -71,9 +72,12 @@ pkg_postinst:${PN}() {
         echo '${bindir}/clixon_cli' >> $D${sysconfdir}/shells
 }
 
-PACKAGES =+ "${PN}-restconf"
+PACKAGES =+ "${PN}-restconf ${PN}-www"
 
 FILES:${PN}-restconf = "${sysconfdir}/init.d/clixon-restconf"
+# The status page at http://<switch>/, served by clixon_restconf (http-data in
+# clixon.xml). It reads the firmware version from os-release.
+FILES:${PN}-www = "${datadir}/clixon-switch/www"
 
 FILES:${PN} += " \
     ${base_sbindir}/bridge-stp \
@@ -87,6 +91,7 @@ FILES:${PN} += " \
 # mstpd-mstpd: mstpd and mstpctl, patched in recipes-networking/mstpd.
 RDEPENDS:${PN} = "clixon base-files ${VIRTUAL-RUNTIME_base-utils} mstpd-mstpd"
 RDEPENDS:${PN}-restconf = "${PN}"
+RDEPENDS:${PN}-www = "${PN}-restconf os-release"
 
 # The backend configures the network, so it takes the old network script's
 # slot: before dropbear (10). RESTCONF after the backend.

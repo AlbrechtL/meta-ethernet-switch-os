@@ -12,7 +12,10 @@ Userspace policy for RTL83xx switches, on top of `meta-rtl83xx-bsp`:
   configuration. Factory default: `lan1`..`lan8` as access ports in VLAN 1 of
   the VLAN-aware bridge `br-lan`, and **192.168.1.1/24** on `vlan1`.
   `ssh cli@192.168.1.1` opens the clixon CLI directly, and RESTCONF answers on
-  **http://192.168.1.1/restconf** (plain HTTP/1, no authentication). A commit
+  **http://192.168.1.1/restconf** (plain HTTP/1, no authentication). A
+  read-only status page (system, management address, ports, VLANs) on
+  **http://192.168.1.1/** is served by `clixon_restconf` as well and reads
+  only RESTCONF; it links to the SWUpdate web UI. A commit
   applies a change; only `save` (or a copy-config to startup) makes it survive
   a reboot. Spanning tree (STP, RSTP, MSTP, OpenConfig `/stp`) runs in
   mstpd, managed by the plugin; it is off by default.
@@ -90,7 +93,7 @@ them in step with the table above.
 | `dynamic-layers/rtl83xx-bsp/.../ethernet-switch-os-image-common.inc` | the packagegroup, `ssh-server-dropbear` and the `cli` user, required by the `rtl83xx-image-initramfs` and `rtl83xx-image` bbappends |
 | `dynamic-layers/rtl83xx-bsp/recipes-images/swupdate/` | `ethernet-switch-os-swu-factory` and `ethernet-switch-os-swu-upgrade` with their sw-descriptions |
 | `recipes-clixon/cligen/`, `recipes-clixon/clixon/` | clixon 7.8.0 with native RESTCONF (HTTP/1, no nghttp2) |
-| `recipes-clixon/clixon-switch/` | the backend plugin (cargo) with its YANG, `/etc/clixon.xml`, clispec, autocli and factory default (`ETHERNET_SWITCH_OS_LAN_PORTS`, `ETHERNET_SWITCH_OS_LAN_ADDRESS`); init scripts, RESTCONF's in `-restconf` |
+| `recipes-clixon/clixon-switch/` | the backend plugin (cargo) with its YANG, `/etc/clixon.xml`, clispec, autocli and factory default (`ETHERNET_SWITCH_OS_LAN_PORTS`, `ETHERNET_SWITCH_OS_LAN_ADDRESS`); init scripts, RESTCONF's in `-restconf`; the status page in `-www` |
 | `recipes-networking/mstpd/` | mstpd from meta-oe, patched to program the kernel's per-VLAN spanning tree (MSTP), which the rtl83xx driver offloads |
 | `recipes-support/swupdate/` | kconfig fragment (U-Boot env, MTD flash handler), web port, `/etc/hwrevision`, `20-ethernet-switch-os-mode` (software set selection, SWUpdate from RAM) |
 | `recipes-core/base-files/` | login banner (`/etc/issue`, `/etc/issue.net`, `/etc/motd`) pointing at `clixon_cli`, overriding oe-core/poky's via the `ethernet-switch-os` `FILESEXTRAPATHS` override |
