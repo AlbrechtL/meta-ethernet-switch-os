@@ -99,6 +99,7 @@ jobs:
             $PWD/layers/openembedded-core/meta \\
             $PWD/layers/meta-yocto/meta-poky \\
             $PWD/layers/meta-openembedded/meta-oe \\
+            $PWD/layers/meta-openembedded/meta-networking \\
             $PWD/layers/meta-swupdate \\
             $PWD/layers/meta-rtl83xx-bsp \\
             $PWD/layers/meta-ethernet-switch-os \\

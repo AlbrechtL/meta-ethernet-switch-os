@@ -1,0 +1,165 @@
+From 8baae160a467d09ce10079945b3cbcc5bc809abd Mon Sep 17 00:00:00 2001
+From: Albrecht Lohofener <albrechtloh@gmx.de>
+Date: Thu, 17 Sep 2026 08:32:27 +0200
+Subject: [PATCH 3/4] SNMP: fix tables with augments and index leaves from
+ other tables
+
+- snmp_table_getnext: reset the capacity of the column OID before
+  parsing each column. yangext_oid_get() overwrites it with the parsed
+  length, so a later, longer column OID (e.g. Q-BRIDGE-MIB's dot1qPvid
+  augmenting BRIDGE-MIB's dot1dBasePortEntry) failed to parse and the
+  request failed.
+- GET and GETNEXT only return columns of the registered table entry:
+  its OID plus one sub-identifier, and readable. An augmented list holds
+  the columns of several entries; index leaves may be not-accessible or
+  leafrefs to another table, whose OIDs they have (Q-BRIDGE-MIB's
+  dot1qVlanStaticEntry). GET matched columns by OID length and last
+  sub-identifier only, and returned such an index for another column.
+- Scalars: translate an SMI default value like a value from the
+  datastore, e.g. an enum name to its number, and use it only for
+  configuration. MIBs translated by RFC 6643 are all state data, where a
+  missing value does not exist; clixon_snmp returned the default.
+---
+ apps/snmp/snmp_handler.c | 75 +++++++++++++++++++++++++++++++---------
+ 1 file changed, 58 insertions(+), 17 deletions(-)
+
+diff --git a/apps/snmp/snmp_handler.c b/apps/snmp/snmp_handler.c
+index 4d97b641..229257e7 100644
+--- a/apps/snmp/snmp_handler.c
++++ b/apps/snmp/snmp_handler.c
+@@ -281,7 +281,13 @@ snmp_scalar_get(clixon_handle               h,
+      * 1. From XML to SNMP string, there is a special case for enumeration, and for default value
+      * 2. From SNMP string to SNMP binary value which invloves parsing
+      */
+-    if (x != NULL && (body = xml_body(x)) != NULL){
++    if (x != NULL)
++        body = xml_body(x);
++    /* The SMI default is in XML form too, e.g. an enum name. Only for
++     * configuration: missing state data does not exist */
++    if (body == NULL && yang_config_ancestor(ys))
++        body = defaultval;
++    if (body != NULL){
+         if ((ret = type_xml2snmp_pre(body, ys, &xmlstr)) < 0)
+             goto done;
+         if (ret == 0){
+@@ -292,12 +298,6 @@ snmp_scalar_get(clixon_handle               h,
+             goto ok;
+         }
+     }
+-    else if (defaultval != NULL){
+-        if ((xmlstr = strdup(defaultval)) == NULL){
+-            clixon_err(OE_UNIX, errno, "strdup");
+-            goto done;
+-        }
+-    }
+     else{
+         if ((ret = netsnmp_request_set_error(request, SNMP_NOSUCHINSTANCE)) != SNMPERR_SUCCESS){
+             clixon_err(OE_SNMP, ret, "netsnmp_request_set_error");
+@@ -819,6 +819,48 @@ clixon_snmp_scalar_handler(netsnmp_mib_handler          *handler,
+     return retval;
+ }
+ 
++/*! Get the OID of a table column, if the column belongs to a table entry
++ *
++ * A column belongs to the entry if its OID is the entry OID plus one
++ * sub-identifier, and it can be read: index leaves of the entry may be
++ * not-accessible, and index leaves from other tables (leafrefs) have the OIDs
++ * of those tables. Augmented lists hold the columns of several entries.
++ * @param[in]  ys       YANG leaf
++ * @param[in]  oide     OID of table entry
++ * @param[in]  oidelen  Length of table entry OID
++ * @param[out] oidc     Column OID
++ * @param[out] oidclen  Length of column OID
++ * @retval     1        Column of the entry
++ * @retval     0        Not a column of the entry
++ * @retval    -1        Error
++ */
++static int
++snmp_table_column(yang_stmt *ys,
++                  oid       *oide,
++                  size_t     oidelen,
++                  oid       *oidc,
++                  size_t    *oidclen)
++{
++    char *access = NULL;
++    int   ret;
++
++    if (yang_keyword_get(ys) != Y_LEAF)
++        return 0;
++    *oidclen = MAX_OID_LEN; /* capacity: yangext_oid_get overwrites it */
++    if ((ret = yangext_oid_get(ys, oidc, oidclen, NULL)) <= 0)
++        return ret;
++    if (*oidclen != oidelen + 1 ||
++        oid_eq(oidc, oidelen, oide, oidelen) != 0)
++        return 0;
++    if (yang_extension_value_opt(ys, "smiv2:max-access", NULL, &access) < 0)
++        return -1;
++    if (access != NULL &&
++        (strcmp(access, "not-accessible") == 0 ||
++         strcmp(access, "accessible-for-notify") == 0))
++        return 0;
++    return 1;
++}
++
+ /*! Create xpath from YANG table OID + 1 + n + cvk/key = requestvb->name 
+  *
+  * Get yang of leaf from first part of OID
+@@ -863,18 +905,14 @@ snmp_table_get(clixon_handle               h,
+     int        ret;
+ 
+     /* Get yang of leaf from first part of OID */
++    if (oidslen < oidtlen+1)
++        goto fail;
+     inext = 0;
+     while ((ys = yn_iter(yt, &inext)) != NULL) {
+-        if (yang_keyword_get(ys) != Y_LEAF)
+-            continue;
+-        /* reset oid */
+-        oidleaflen = MAX_OID_LEN;
+-        if ((ret = yangext_oid_get(ys, oidleaf, &oidleaflen, NULL)) < 0)
++        if ((ret = snmp_table_column(ys, oidt, oidtlen, oidleaf, &oidleaflen)) < 0)
+             goto done;
+         if (ret == 0)
+             continue;
+-        if (oidtlen + 1 != oidleaflen) /* Indexes may be from other OID scope, skip those */
+-            continue;
+         if (oids[oidleaflen-1] == oidleaf[oidleaflen-1])
+             break;
+     }
+@@ -1241,6 +1279,8 @@ table_getnext_cache(clixon_handle h,
+  *
+  * @param[in]  h        Clixon handle
+  * @param[in]  ylist    Yang of table (of list type)
++ * @param[in]  oide     OID of table entry: only its columns are returned
++ * @param[in]  oidelen  Length of table entry OID
+  * @param[in]  oids     OID of ultimate scalar value
+  * @param[in]  oidslen  OID length of scalar
+  * @param[in]  reqinfo  Agent transaction request structure
+@@ -1253,6 +1293,8 @@ table_getnext_cache(clixon_handle h,
+ static int
+ snmp_table_getnext(clixon_handle               h,
+                    yang_stmt                  *ylist,
++                   oid                        *oide,
++                   size_t                      oidelen,
+                    oid                        *oids,
+                    size_t                      oidslen,
+                    netsnmp_agent_request_info *reqinfo,
+@@ -1312,9 +1354,7 @@ snmp_table_getnext(clixon_handle               h,
+             while ((xcol = xml_child_iter(xrow, &ixcol, CX_ELMNT)) != NULL) {
+                 if ((ycol = xml_spec(xcol)) == NULL)
+                     continue;
+-                if (yang_keyword_get(ycol) != Y_LEAF)
+-                    continue;
+-                if ((ret = yangext_oid_get(ycol, oidc, &oidclen, NULL)) < 0)
++                if ((ret = snmp_table_column(ycol, oide, oidelen, oidc, &oidclen)) < 0)
+                     goto done;
+                 if (ret == 0)
+                     continue;
+@@ -1406,6 +1446,7 @@ clixon_snmp_table_handler1(netsnmp_mib_handler          *handler,
+     case MODE_GETNEXT: // 161
+         /* Register table sub-oid:s of existing entries in clixon */
+         if ((ret = snmp_table_getnext(sh->sh_h, sh->sh_ys,
++                                      sh->sh_oid2, sh->sh_oid2len,
+                                       requestvb->name, requestvb->name_length,
+                                       reqinfo, request)) < 0)
+             goto done;

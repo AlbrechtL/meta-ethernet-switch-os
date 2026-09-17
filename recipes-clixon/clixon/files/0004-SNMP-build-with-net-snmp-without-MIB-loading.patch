@@ -1,0 +1,28 @@
+From 410bc62869cae50e631e9cce6721d9a2c7b9762c Mon Sep 17 00:00:00 2001
+From: Albrecht Lohofener <albrechtloh@gmx.de>
+Date: Thu, 17 Sep 2026 08:39:00 +0200
+Subject: [PATCH 4/4] SNMP: build with net-snmp without MIB loading
+
+net-snmp configured with --disable-mib-loading has no MIB parser, so
+no tclist to free at exit, and clixon_snmp failed to link.
+---
+ apps/snmp/snmp_lib.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/apps/snmp/snmp_lib.c b/apps/snmp/snmp_lib.c
+index f42da44e..e44d0750 100644
+--- a/apps/snmp/snmp_lib.c
++++ b/apps/snmp/snmp_lib.c
+@@ -1577,10 +1577,12 @@ clixon_snmp_api_agent_check(void)
+ int
+ clixon_snmp_api_agent_cleanup(void)
+ {
++#ifndef NETSNMP_DISABLE_MIB_LOADING /* no parse.c without MIB loading */
+     extern void *tclist;
+ 
+     if (tclist)
+         free(tclist);
++#endif
+     return 0;
+ }
+ 

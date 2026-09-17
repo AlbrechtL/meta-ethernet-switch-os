@@ -14,7 +14,10 @@ target, and traps worth remembering.
 | `/usr/lib/clixon-switch/prepare-datastore` | run by the init script before the backend starts |
 | `/sbin/bridge-stp` | link to `/usr/lib/clixon-switch/bridge-stp`, run by the kernel when spanning tree is switched on |
 | `/usr/sbin/mstpd`, `/usr/sbin/mstpctl` | spanning tree daemon, started by the plugin while `/stp` enables a protocol |
-| `/usr/share/clixon-switch/yang/` | the main module and its OpenConfig imports |
+| `/usr/sbin/snmpd`, `/usr/sbin/clixon_snmp` | SNMP agent and its AgentX subagent for the bridge MIBs, started by the plugin while `/snmp/engine/enabled` is true |
+| `/var/run/clixon-switch/snmpd.conf`, `agentx.sock` | snmpd's configuration (with the USM keys, mode 0600), written by the plugin; the AgentX socket (`CLICON_SNMP_AGENT_SOCK`) |
+| `/var/lib/net-snmp/snmpd.conf` | snmpd's persistent data (flash): `engineBoots` |
+| `/usr/share/clixon-switch/yang/` | the main module, its OpenConfig and IETF imports, and the MIBs as YANG (`mib/`) |
 | `/usr/share/clixon-switch/www/` | status page (`index.html`, `app.js`, `style.css`), served at `/` by `clixon_restconf` |
 | `/usr/share/clixon-switch/factory-default.xml` | first-boot configuration, and the failsafe |
 | `/var/run/clixon-switch/` | datastores (tmpfs); `startup_db` is a symlink to... |
@@ -52,6 +55,15 @@ curl -X POST -H 'Content-Type: application/yang-data+json' \
 ```
 
 Factory reset: `rm /var/lib/clixon/clixon-switch/startup_db` and reboot.
+
+SNMPv3, read-only, on all addresses (keys made with clixon-switch-rs's
+`scripts/snmp-localize-key` for the engine ID, see its README):
+
+```sh
+curl -X PUT -H 'Content-Type: application/yang-data+json' -d @snmp.json \
+    http://192.168.1.1/restconf/data/ietf-snmp:snmp
+snmpwalk -v3 -l authPriv -u nms -a SHA -A '...' -x AES -X '...' 192.168.1.1 1.3.6.1.2.1.17
+```
 
 ## Status web page
 
@@ -112,6 +124,28 @@ hence `start-stop-daemon -b -m`.
 v5.4.0) it imports `openconfig-network-instance`, which pulls BGP, IS-IS, OSPF,
 MPLS and more into clixon's YANG parser. clixon-switch-rs vendors v5.3.0, and
 its `vendor-yang.sh` refuses a closure that contains network-instance.
+
+**USM keys belong to an engine ID.** ietf-snmp stores localized keys, not
+passphrases. Without `/snmp/engine/engine-id` the engine ID comes from
+`br-lan`'s MAC address, so keys made for one switch do not work on another,
+and a configured engine ID must not change without new keys.
+
+**snmpd brings back deleted users.** It saves every USM user in
+`/var/lib/net-snmp/snmpd.conf` and loads them on the next start, next to
+those in its configuration. The plugin removes the `usmUser` lines before
+each start.
+
+**clixon_snmp 7.8 does not handle these MIBs unpatched.** `binary`
+typedefs (BridgeId, PortList) fail registration, mac-address indexes are
+encoded as text, tables with augments abort, GET mixes up columns of tables
+whose index comes from another table, SMI defaults are returned for missing
+state data, and it does not link against net-snmp without MIB loading. The
+patches in `recipes-clixon/clixon/files` fix these, and backport bounds
+checks from clixon master.
+
+**net-snmp's `--enable-read-only` breaks clixon_snmp.** It removes the
+`MODE_SET_*` constants clixon_snmp uses. Nothing is writable anyway: the
+MIB modules are `config false`, and the plugin configures no write view.
 
 **Rust on mips is a tier-3 target.** oe-core builds the standard library from
 source for `mips32r2-24kc` musl, but its Rust selftests skip mips, so nothing

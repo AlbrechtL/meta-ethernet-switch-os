@@ -10,6 +10,19 @@ LIC_FILES_CHKSUM = "file://LICENSE.md;md5=55a6a303edda663ff84f496c4a9f9206"
 SRC_URI = "git://github.com/clicon/clixon.git;protocol=https;branch=master"
 SRCREV = "62a901b1c6215703a7c37e1ff4d51a155587af7d"
 
+# clixon_snmp, for BRIDGE-MIB, Q-BRIDGE-MIB and RSTP-MIB (see clixon-switch):
+# 0001: bounds checks from clixon master (after 7.8.0).
+# 0002: YANG binary (PortList, BridgeId) and mac-address, also as index.
+# 0003: tables with augments (Q-BRIDGE-MIB's dot1qPortVlanTable) and with
+#       index leaves from other tables; SMI default values.
+# 0004: links against net-snmp without MIB loading (net-snmp bbappend).
+SRC_URI += " \
+    file://0001-SNMP-backport-OID-and-octet-string-bounds-checks-fro.patch \
+    file://0002-SNMP-support-YANG-binary-and-mac-address-types.patch \
+    file://0003-SNMP-fix-tables-with-augments-and-index-leaves-from-.patch \
+    file://0004-SNMP-build-with-net-snmp-without-MIB-loading.patch \
+"
+
 # openssl: libclixon uses SHA from libcrypto (lib/src/clixon_digest.c), and
 # native RESTCONF links libssl even when no socket has TLS enabled.
 DEPENDS = "cligen openssl flex-native bison-native"
@@ -25,6 +38,10 @@ EXTRA_OECONF = " \
     --disable-nghttp2 \
     --with-configfile=${sysconfdir}/clixon.xml \
 "
+
+# clixon_snmp: an AgentX subagent of net-snmp's snmpd, in ${PN}-snmp.
+PACKAGECONFIG ??= "netsnmp"
+PACKAGECONFIG[netsnmp] = "--enable-netsnmp,--disable-netsnmp,net-snmp"
 
 # See cligen: keep configure from defaulting to "install -s".
 export INSTALLFLAGS = ""
@@ -55,3 +72,7 @@ USERADD_PACKAGES = "${PN}"
 GROUPADD_PARAM:${PN} = "--system clicon"
 USERADD_PARAM:${PN} = "--system --no-create-home --home-dir /nonexistent \
     --shell /bin/false --gid clicon clicon"
+
+PACKAGES =+ "${PN}-snmp"
+FILES:${PN}-snmp = "${sbindir}/clixon_snmp"
+RDEPENDS:${PN}-snmp = "${PN}"

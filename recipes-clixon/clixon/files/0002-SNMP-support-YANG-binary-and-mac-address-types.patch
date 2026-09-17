@@ -1,0 +1,257 @@
+From 9fc586227aa619a09629a73b5b9be69b73500bc8 Mon Sep 17 00:00:00 2001
+From: Albrecht Lohofener <albrechtloh@gmx.de>
+Date: Thu, 17 Sep 2026 08:30:22 +0200
+Subject: [PATCH 2/4] SNMP: support YANG binary and mac-address types
+
+Translations of MIBs by smidump use binary for OCTET STRING textual
+conventions like BRIDGE-MIB's BridgeId and Q-BRIDGE-MIB's PortList, and
+yang:mac-address for MacAddress, also as table index (dot1dTpFdbTable).
+
+- Look up a typedef's resolved type also in the original type map, so a
+  typedef of binary is not an error.
+- binary values are base64 in XML and octets in SNMP.
+- mac-address values are six octets, not their text, and a mac-address
+  index is six sub-identifiers without a length (implied: last index).
+---
+ apps/snmp/snmp_lib.c      | 136 +++++++++++++++++++++++++++++++++++++-
+ apps/snmp/snmp_lib.h      |   2 +
+ apps/snmp/snmp_register.c |  10 +++
+ 3 files changed, 147 insertions(+), 1 deletion(-)
+
+diff --git a/apps/snmp/snmp_lib.c b/apps/snmp/snmp_lib.c
+index b09b7ac0..f42da44e 100644
+--- a/apps/snmp/snmp_lib.c
++++ b/apps/snmp/snmp_lib.c
+@@ -62,6 +62,8 @@
+ #include <netinet/in.h>    /* inet_addr */
+ #include <arpa/inet.h>
+ #include <netinet/ether.h> /* ether_aton */
++#include <ctype.h>
++#include <string.h>
+ 
+ /* net-snmp */
+ #include <net-snmp/net-snmp-config.h>
+@@ -601,7 +603,12 @@ type_yang2asn1(yang_stmt    *ys,
+         (extended || (at < CLIXON_ASN_EXTRAS))){
+         ;
+     }
+-    /* Then try fully resolved type */
++    /* Then try fully resolved type, first in the original type map: a typedef
++     * of binary (e.g. PortList) has no entry of its own */
++    else if ((at = clicon_str2int(snmp_orig_map, restype)) >= 0 &&
++             (extended || (at < CLIXON_ASN_EXTRAS))){
++        ;
++    }
+     else if ((at = clicon_str2int(snmp_type_map, restype)) < 0){
+         clixon_err(OE_YANG, 0, "No snmp translation for YANG %s type:%s",
+                    yang_argument_get(ys), restype);
+@@ -624,6 +631,14 @@ type_yang2asn1(yang_stmt    *ys,
+         if (strcmp(restype, "bits") == 0){
+             at = CLIXON_ASN_BIT_STRING;
+         }
++        /* binary is base64 in XML */
++        else if (strcmp(restype, "binary") == 0){
++            at = CLIXON_ASN_BINARY;
++        }
++        /* mac-address is six octets in SNMP, not its text */
++        else if (origtype && strcmp(origtype, "mac-address") == 0){
++            at = CLIXON_ASN_MAC_ADDR;
++        }
+     }
+     if (asn1_type)
+         *asn1_type = at;
+@@ -634,6 +649,82 @@ type_yang2asn1(yang_stmt    *ys,
+     return retval;
+ }
+ 
++static const char snmp_base64_chars[] =
++    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
++
++/*! Decode base64 (RFC 4648, as YANG binary), whitespace is ignored
++ *
++ * @param[in]  str   Base64 string
++ * @param[out] buf   Malloc:ed octets, free after use
++ * @param[out] len   Number of octets
++ * @retval     1     OK
++ * @retval     0     Invalid base64
++ * @retval    -1     Error
++ */
++static int
++snmp_base64_decode(const char *str,
++                   u_char    **buf,
++                   size_t     *len)
++{
++    const char *p;
++    const char *c;
++    uint32_t    acc = 0;
++    int         bits = 0;
++    size_t      n = 0;
++
++    if ((*buf = malloc(strlen(str)*3/4 + 1)) == NULL){
++        clixon_err(OE_UNIX, errno, "malloc");
++        return -1;
++    }
++    for (p = str; *p; p++){
++        if (isspace((unsigned char)*p))
++            continue;
++        if (*p == '=')
++            break;
++        if ((c = strchr(snmp_base64_chars, *p)) == NULL){
++            free(*buf);
++            *buf = NULL;
++            return 0;
++        }
++        acc = (acc << 6) | (uint32_t)(c - snmp_base64_chars);
++        bits += 6;
++        if (bits >= 8){
++            bits -= 8;
++            (*buf)[n++] = (acc >> bits) & 0xff;
++        }
++    }
++    *len = n;
++    return 1;
++}
++
++/*! Encode octets as base64 (RFC 4648, as YANG binary)
++ *
++ * @param[in]  buf   Octets
++ * @param[in]  len   Number of octets
++ * @param[out] cb    Base64 string is appended
++ */
++static void
++snmp_base64_encode(const u_char *buf,
++                   size_t        len,
++                   cbuf         *cb)
++{
++    size_t   i;
++    uint32_t acc;
++
++    for (i = 0; i < len; i += 3){
++        acc = (uint32_t)buf[i] << 16;
++        if (i+1 < len)
++            acc |= (uint32_t)buf[i+1] << 8;
++        if (i+2 < len)
++            acc |= buf[i+2];
++        cprintf(cb, "%c%c%c%c",
++                snmp_base64_chars[(acc >> 18) & 0x3f],
++                snmp_base64_chars[(acc >> 12) & 0x3f],
++                i+1 < len ? snmp_base64_chars[(acc >> 6) & 0x3f] : '=',
++                i+2 < len ? snmp_base64_chars[acc & 0x3f] : '=');
++    }
++}
++
+ /*! Translate from yang/xml/clixon to SNMP/ASN.1
+  *
+  * @param[in]   snmpval  Malloc:ed snmp type
+@@ -752,6 +843,7 @@ type_snmp2xml(yang_stmt                  *ys,
+         *asn1type = ASN_OCTET_STR;
+         break;
+     case CLIXON_ASN_PHYS_ADDR:
++    case CLIXON_ASN_MAC_ADDR:
+         if (requestvb->val_len < sizeof(struct ether_addr)){
+             clixon_err(OE_XML, EINVAL, "SNMP PhysAddress value too short (%zu < %zu)",
+                        (size_t)requestvb->val_len, sizeof(struct ether_addr));
+@@ -760,6 +852,15 @@ type_snmp2xml(yang_stmt                  *ys,
+         cv_string_set(cv, ether_ntoa((const struct ether_addr *)requestvb->val.string));
+         *asn1type = ASN_OCTET_STR;
+         break;
++    case CLIXON_ASN_BINARY:
++        if ((cb = cbuf_new()) == NULL){
++            clixon_err(OE_UNIX, errno, "cbuf_new");
++            goto done;
++        }
++        snmp_base64_encode(requestvb->val.string, requestvb->val_len, cb);
++        cv_string_set(cv, cbuf_get(cb));
++        *asn1type = ASN_OCTET_STR;
++        break;
+     case ASN_OCTET_STR: // 4
+         /* Not NUL-terminated; bound by val_len to avoid reading past the buffer */
+         cv_strncpy(cv, (char*)requestvb->val.string, requestvb->val_len);
+@@ -1002,6 +1103,16 @@ type_xml2snmp(char       *snmpstr,
+         memcpy(*snmpval, &saddr, 4);
+         break;
+     }
++    case CLIXON_ASN_BINARY:
++        if ((ret = snmp_base64_decode(snmpstr, snmpval, snmplen)) < 0)
++            goto done;
++        if (ret == 0){
++            clixon_debug(CLIXON_DBG_SNMP, "Invalid base64 %s", snmpstr);
++            goto fail;
++        }
++        *asn1type = ASN_OCTET_STR;
++        break;
++    case CLIXON_ASN_MAC_ADDR:
+     case CLIXON_ASN_PHYS_ADDR:{
+         struct ether_addr *eaddr;
+         *snmplen = sizeof(*eaddr);
+@@ -1175,6 +1286,23 @@ snmp_str2oid(char      *str,
+     size_t     slen;
+ 
+     cap = *objidlen; /* input capacity of objid */
++    if (type_yang2asn1(yi, &asn1_type, 1) < 0)
++        goto done;
++    /* A MacAddress index is fixed-length: six sub-identifiers, no length */
++    if (asn1_type == CLIXON_ASN_MAC_ADDR){
++        struct ether_addr *eaddr;
++
++        if (cap < 6){
++            clixon_err(OE_XML, EINVAL, "OID buffer overflow");
++            goto done;
++        }
++        if ((eaddr = ether_aton(str)) != NULL)
++            for (i=0; i<6; i++)
++                objid[j++] = eaddr->ether_addr_octet[i];
++        *objidlen = j;
++        retval = 0;
++        goto done;
++    }
+     if (type_yang2asn1(yi, &asn1_type, 0) < 0)
+         goto done;
+     switch (asn1_type){
+@@ -1276,6 +1404,12 @@ snmp_oid2str(oid      **oidi,
+         for (; i < *oidilen; i++)
+             cprintf(enc, "%c", (char)((*oidi)[i]&0xff));
+         break;
++    case CLIXON_ASN_MAC_ADDR:
++        if (*oidilen < 6)
++            break;
++        for (; i < 6; i++)
++            cprintf(enc, "%s%02x", i ? ":" : "", (unsigned)((*oidi)[i]&0xff));
++        break;
+     default:
+         break;
+     }
+diff --git a/apps/snmp/snmp_lib.h b/apps/snmp/snmp_lib.h
+index b4154f3b..b4a145ce 100644
+--- a/apps/snmp/snmp_lib.h
++++ b/apps/snmp/snmp_lib.h
+@@ -54,6 +54,8 @@ extern "C" {
+  * Must be back to proper net-snmp ASN_ types in type_snmp2xml and type_xml2snmp
+  * before calling netsnmp API
+ */
++#define CLIXON_ASN_BINARY       250 /* YANG binary: base64 in XML, octets in SNMP */
++#define CLIXON_ASN_MAC_ADDR     251 /* yang:mac-address: 6 octets, fixed-length index */
+ #define CLIXON_ASN_BIT_STRING   252 /* Special case used to identify a bit string data type */
+ #define CLIXON_ASN_EXTRAS       253 /* Special case clixon address >= this */
+ #define CLIXON_ASN_PHYS_ADDR    253 /* Special case phy-address */
+diff --git a/apps/snmp/snmp_register.c b/apps/snmp/snmp_register.c
+index ae3ec415..8e71cd26 100644
+--- a/apps/snmp/snmp_register.c
++++ b/apps/snmp/snmp_register.c
+@@ -304,6 +304,16 @@ mibyang_table_register(clixon_handle h,
+         if (type_yang2asn1(yleaf, &asn1type, 0) < 0)
+             //      goto done;
+             goto ok; // XXX skip
++        /* A MacAddress index has no length sub-identifier: implied, which
++         * the table helper only allows for the last index */
++        if (cvec_next(cvk, cvi) == NULL){
++            int extended;
++
++            if (type_yang2asn1(yleaf, &extended, 1) < 0)
++                goto done;
++            if (extended == CLIXON_ASN_MAC_ADDR)
++                asn1type = ASN_PRIV_IMPLIED_OCTET_STR;
++        }
+         if (snmp_varlist_add_variable(&table_info->indexes,
+                                       NULL, // oid name
+                                       0,    // oid len
