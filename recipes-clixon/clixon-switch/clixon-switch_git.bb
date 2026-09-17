@@ -1,7 +1,8 @@
 SUMMARY = "clixon backend plugin for the switch configuration"
 DESCRIPTION = "Rust clixon backend plugin that applies the OpenConfig switch \
-configuration to the kernel: front ports in a VLAN-aware bridge, and routed \
-VLAN interfaces with static IPv4 addresses or a DHCP client (busybox udhcpc). \
+configuration to the kernel: front ports in a VLAN-aware bridge, routed \
+VLAN interfaces with static IPv4 addresses or a DHCP client (busybox udhcpc), \
+and spanning tree (STP, RSTP, MSTP) with mstpd. \
 Also installs the YANG modules, clixon.xml, the CLI specification, the factory \
 default, the udhcpc script and init scripts for the backend and RESTCONF."
 HOMEPAGE = "https://github.com/AlbrechtL/clixon-switch-rs"
@@ -16,7 +17,7 @@ SRC_URI = " \
     file://clixon-restconf \
 "
 # Update together with the crate list: bitbake -c update_crates clixon-switch
-SRCREV = "568f91ac135c5820b7946351e33ce0793a0509f1"
+SRCREV = "76642776fa237cacec2212adaf644931014ad3ef"
 PV = "0.1.0+git"
 
 require ${BPN}-crates.inc
@@ -53,6 +54,11 @@ do_install() {
     install -m 0755 ${UNPACKDIR}/clixon-backend ${D}${sysconfdir}/init.d/
     install -m 0755 ${UNPACKDIR}/clixon-restconf ${D}${sysconfdir}/init.d/
 
+    # The kernel runs /sbin/bridge-stp when spanning tree is switched on; it
+    # leaves spanning tree to mstpd, which the plugin runs.
+    install -d ${D}${base_sbindir}
+    ln -sf ${libdir}/clixon-switch/bridge-stp ${D}${base_sbindir}/bridge-stp
+
     # The DHCP client's script rewrites resolv.conf on every lease renewal.
     # It follows this symlink, so that happens on tmpfs, not on flash.
     ln -sf ${localstatedir}/run/resolv.conf ${D}${sysconfdir}/resolv.conf
@@ -70,6 +76,7 @@ PACKAGES =+ "${PN}-restconf"
 FILES:${PN}-restconf = "${sysconfdir}/init.d/clixon-restconf"
 
 FILES:${PN} += " \
+    ${base_sbindir}/bridge-stp \
     ${sysconfdir}/resolv.conf \
     ${libdir}/clixon-switch \
     ${datadir}/clixon-switch \
@@ -77,7 +84,8 @@ FILES:${PN} += " \
 "
 
 # base-utils (busybox) also provides udhcpc and ip for the DHCP client.
-RDEPENDS:${PN} = "clixon base-files ${VIRTUAL-RUNTIME_base-utils}"
+# mstpd-mstpd: mstpd and mstpctl, patched in recipes-networking/mstpd.
+RDEPENDS:${PN} = "clixon base-files ${VIRTUAL-RUNTIME_base-utils} mstpd-mstpd"
 RDEPENDS:${PN}-restconf = "${PN}"
 
 # The backend configures the network, so it takes the old network script's

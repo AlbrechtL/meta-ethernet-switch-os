@@ -12,6 +12,8 @@ target, and traps worth remembering.
 | `/usr/lib/clixon-switch/clispec/` | `clixon-switch_cli.cli` |
 | `/usr/lib/clixon-switch/backend/` | `clixon-switch_backend.so`, the plugin |
 | `/usr/lib/clixon-switch/prepare-datastore` | run by the init script before the backend starts |
+| `/sbin/bridge-stp` | link to `/usr/lib/clixon-switch/bridge-stp`, run by the kernel when spanning tree is switched on |
+| `/usr/sbin/mstpd`, `/usr/sbin/mstpctl` | spanning tree daemon, started by the plugin while `/stp` enables a protocol |
 | `/usr/share/clixon-switch/yang/` | the main module and its OpenConfig imports |
 | `/usr/share/clixon-switch/factory-default.xml` | first-boot configuration, and the failsafe |
 | `/var/run/clixon-switch/` | datastores (tmpfs); `startup_db` is a symlink to... |
@@ -126,6 +128,27 @@ such addresses on the interface that runs the DHCP client. The plugin, not an
 init script, starts and stops udhcpc, because only the plugin knows whether
 the running configuration has `dhcp-client` set. `/etc/resolv.conf` is a
 symlink into `/var/run`, so lease renewals do not write to flash.
+
+**The kernel leaves spanning tree to mstpd only through `/sbin/bridge-stp`.**
+Setting `stp_state` 1 on a bridge makes the kernel run that fixed path; if it
+is missing or fails, the kernel silently runs its own 802.1D STP instead.
+clixon-switch installs a script that always succeeds (it starts mstpd itself,
+first) and fails the commit if the kernel still chose its own STP. mstpd's
+own `bridge-stp` lands in `/usr/sbin`, where the kernel does not look. Only
+bridges in the host's network namespace get userspace STP at all, which is
+why the dev container cannot test loops.
+
+**Stock mstpd does not do MSTP in the data plane.** It computes the port
+states of every MSTI but only passes the CIST's to the kernel.
+`recipes-networking/mstpd` patches it to use the kernel's per-VLAN spanning
+tree (bridge `mst_enable`, Linux 5.18+), which the rtl83xx driver offloads
+(64 MST slots on the RTL838x). `mst_enable` can only change while no bridge
+port has a VLAN, so the plugin creates `br-lan` with it, always.
+
+**mstpctl needs CAP_SYS_ADMIN in mstpd's answer.** mstpd replies with the
+client's `SCM_CREDENTIALS` still attached, which the kernel only allows with
+CAP_SYS_ADMIN. clixon_backend runs as root here; a container needs
+`--cap-add SYS_ADMIN`.
 
 Find the next size offender with `readelf -d` over the rootfs (`NEEDED`
 entries) rather than grepping pkgdata.

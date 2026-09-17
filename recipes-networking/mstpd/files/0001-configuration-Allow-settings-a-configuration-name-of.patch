@@ -1,0 +1,72 @@
+From 536c6ed9277551daeccbe48b46240f8ff7dd4437 Mon Sep 17 00:00:00 2001
+From: Thibaut Collet <thbt.cllt@gmail.com>
+Date: Tue, 28 Apr 2026 11:02:24 +0200
+Subject: [PATCH 1/2] configuration: Allow settings a configuration name of 32
+ characters
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Since commit d27d7e93485d to remove a compilation warning due to strncpy copy
+of the MST region name always set the last characters to NULL.
+
+This chnage is not compliant with the standard
+cf 802.1Q-2022 section 13.8 MST Configuration Identifier (MCID):
+
+Each MCID contains the following components:
+...
+b) The Configuration Name, a variable length text string encoded within a fixed
+   field of 32 octets, conforming to IETF RFC 2271’s definition of SnmpAdminString.
+   If the Configuration Name is less than 32 characters, the text string should
+   be terminated by the NUL character, with the remainder of the 32-octet field
+   filled with NUL characters. Otherwise, the text string is encoded with no
+   terminating NUL character.
+
+Moreover this change leads to a wrong behavior with some configuration like
+
+mstpctl addbridge br0
+mstpctl setmstconfid br0 1 "12345678901234567890123456789012"
+
+With this configuration:
+- MST Config name of the MSTP frame with wireshark is
+  1234567890123456789012345678901 and not 12345678901234567890123456789012.
+  This is the non compliance with the standard and can lead to interoperability issue.
+- output of 'mstpctl showmstconfid br0' gives 1234567890123456789012345678901
+  and not 12345678901234567890123456789012 for 'Configuration Name' field
+- resent of the command 'mstpctl setmstconfid br0 1 "12345678901234567890123456789012"'
+  trigs a restart of the bridge state machine whereas no action is expected.
+
+To fix the regression the modification done by commit d27d7e93485d is reverted and
+a pragma is added to avoid the GCC warning.
+
+The configuration name is only printed by showmstconfid command and the use of %*s
+by this command allows to print a non NUL string without unexpected behavior.
+
+Signed-off-by: Thibaut Collet <thbt.cllt@gmail.com>
+Upstream-Status: Backport [https://github.com/mstpd/mstpd/commit/14622584f54c34bb60d43a545c6f4e5a16aed120]
+---
+ mstp.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/mstp.c b/mstp.c
+index 2c38044..ba53916 100644
+--- a/mstp.c
++++ b/mstp.c
+@@ -1628,8 +1628,13 @@ void MSTP_IN_set_mst_config_id(bridge_t *br, __u16 revision, __u8 *name)
+         assign(br->MstConfigId.s.revision_level, valueRevision);
+         memset(br->MstConfigId.s.configuration_name, 0,
+                sizeof(br->MstConfigId.s.configuration_name));
++        /* configuration_name can be non NUL terminated cf 802.1Q-2022 section 13.8
++         * copy everything and ignore GCC warning */
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wstringop-truncation"
+         strncpy((char *)br->MstConfigId.s.configuration_name, (char *)name,
+-                sizeof(br->MstConfigId.s.configuration_name) - 1);
++                sizeof(br->MstConfigId.s.configuration_name));
++#pragma GCC diagnostic pop
+         br_state_machines_begin(br);
+     }
+ }
+-- 
+2.53.0
+

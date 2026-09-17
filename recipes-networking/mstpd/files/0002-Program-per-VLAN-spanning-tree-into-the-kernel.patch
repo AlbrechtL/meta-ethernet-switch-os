@@ -1,0 +1,630 @@
+From be5470dfe34495996accbefe3511c4393a8f1b04 Mon Sep 17 00:00:00 2001
+From: Albrecht Lohofener <albrechtloh@gmx.de>
+Date: Thu, 17 Sep 2026 06:14:31 +0200
+Subject: [PATCH 2/2] Program per-VLAN spanning tree into the kernel
+
+mstpd computes the port states of every MSTI, but only passes the CIST
+states to the kernel, so all VLANs follow the CIST.
+
+Since Linux 5.18 the bridge supports per-VLAN spanning tree (bridge option
+mst_enable): each VLAN is mapped to an MSTI, and each port has a state per
+MSTI. switchdev drivers offload both.
+
+On bridges with mst_enable, program the VLAN-to-MSTI mapping from the
+VID-to-FID and FID-to-MSTID tables, and set the port states of the MSTIs.
+The kernel only has a port state in an MSTI while the port is a member of
+a VLAN of that MSTI, and a VLAN added later starts out with the CIST state.
+So reprogram mapping and states whenever the kernel reports a VLAN change
+(RTNLGRP_BRVLAN), and set only states the kernel reports. When a bridge is
+removed from mstpd, map its VLANs back to the CIST.
+
+The kernel cannot flush the forwarding database of a single MSTI; flush the
+whole port instead.
+
+Bridges without mst_enable behave as before.
+
+Upstream-Status: Pending
+Signed-off-by: Albrecht Lohofener <albrechtloh@gmx.de>
+---
+ bridge_ctl.h   |   6 +
+ bridge_track.c | 452 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ brmon.c        |  15 ++
+ 3 files changed, 466 insertions(+), 7 deletions(-)
+
+diff --git a/bridge_ctl.h b/bridge_ctl.h
+index d09a8b4..3230cea 100644
+--- a/bridge_ctl.h
++++ b/bridge_ctl.h
+@@ -38,6 +38,10 @@ typedef struct
+     char name[IFNAMSIZ];
+ 
+     bool up;
++    /* The kernel has per-VLAN spanning tree (mst_enable) */
++    bool mst_enabled;
++    /* VLANs changed: reprogram the kernel's MST mapping and states */
++    bool mst_sync_pending;
+ } sysdep_br_data_t;
+ 
+ typedef struct
+@@ -82,6 +86,8 @@ extern struct rtnl_handle rth_state;
+ int init_bridge_ops(void);
+ 
+ int bridge_notify(int br_index, int if_index, bool newlink, unsigned flags);
++void bridge_vlan_notify(int if_index);
++void bridge_vlan_notify_done(void);
+ 
+ void bridge_bpdu_rcv(int ifindex, const unsigned char *data, int len);
+ 
+diff --git a/bridge_track.c b/bridge_track.c
+index 55bcfef..3936395 100644
+--- a/bridge_track.c
++++ b/bridge_track.c
+@@ -458,6 +458,417 @@ static int br_set_ageing_time(char *brname, unsigned int ageing_time)
+     return 0;
+ }
+ 
++/*
++ * Per-VLAN spanning tree in the kernel (Linux 5.18+).
++ *
++ * With the bridge option mst_enable, the kernel keeps a port state per MSTI
++ * and maps each VLAN to an MSTI; switchdev drivers offload both. mstpd then
++ * programs the VLAN-to-MSTI mapping from its VID-to-FID and FID-to-MSTID
++ * tables, and the port states of all MSTIs, not only of the CIST.
++ *
++ * The kernel only knows the state of a port in an MSTI while the port is a
++ * member of a VLAN mapped to that MSTI. So whenever VLANs change, mstpd
++ * reprograms the mapping and the states (br_mst_sync), and it only sets
++ * states the kernel reports.
++ */
++
++#define MST_BUF_SIZE 16384
++#define VLAN_ABSENT  0xFFFF
++
++#define MST_RTA(r) \
++    ((struct rtattr *)(((char *)(r)) + NLMSG_ALIGN(sizeof(struct br_vlan_msg))))
++
++static inline __u16 mst_rta_u16(const struct rtattr *rta)
++{
++    return *(__u16 *)RTA_DATA(rta);
++}
++
++static inline __u8 mst_rta_u8(const struct rtattr *rta)
++{
++    return *(__u8 *)RTA_DATA(rta);
++}
++
++/* Nested attribute helpers, as in iproute2 */
++static struct rtattr *mst_nest_start(struct nlmsghdr *n, int maxlen, int type)
++{
++    struct rtattr *nest = NLMSG_TAIL(n);
++    addattr_l(n, maxlen, type | NLA_F_NESTED, NULL, 0);
++    return nest;
++}
++
++static void mst_nest_end(struct nlmsghdr *n, struct rtattr *nest)
++{
++    nest->rta_len = (void *)NLMSG_TAIL(n) - (void *)nest;
++}
++
++/* parse_rtattr, ignoring the flags in the attribute type */
++static void mst_parse(struct rtattr *tb[], int max, struct rtattr *rta,
++                      int len)
++{
++    memset(tb, 0, sizeof(struct rtattr *) * (max + 1));
++    for(; RTA_OK(rta, len); rta = RTA_NEXT(rta, len))
++    {
++        int type = rta->rta_type & NLA_TYPE_MASK;
++        if(type <= max)
++            tb[type] = rta;
++    }
++}
++
++/* Sends a dump request and reads the replies into filter. */
++static int mst_dump(struct nlmsghdr *n, rtnl_filter_t filter, void *arg)
++{
++    n->nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP;
++    n->nlmsg_seq = rth_state.dump = ++rth_state.seq;
++    if(0 > rtnl_send(&rth_state, (const char *)n, n->nlmsg_len))
++        return -1;
++    return rtnl_dump_filter(&rth_state, filter, arg, NULL, NULL);
++}
++
++/* Whether the bridge has mst_enable set. */
++static bool br_mst_enabled(int br_index)
++{
++    struct
++    {
++        struct nlmsghdr n;
++        struct ifinfomsg ifi;
++        char buf[64];
++    } req;
++    static struct
++    {
++        struct nlmsghdr n;
++        char buf[MST_BUF_SIZE];
++    } answer;
++    struct rtattr *tb[IFLA_MAX + 1], *li[IFLA_INFO_MAX + 1];
++    struct rtattr *br[IFLA_BR_MAX + 1];
++    struct ifinfomsg *ifi;
++    struct br_boolopt_multi *bm;
++    int len;
++
++    memset(&req, 0, sizeof(req));
++    req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg));
++    req.n.nlmsg_flags = NLM_F_REQUEST;
++    req.n.nlmsg_type = RTM_GETLINK;
++    req.ifi.ifi_family = AF_UNSPEC;
++    req.ifi.ifi_index = br_index;
++    if(0 > rtnl_talk(&rth_state, &req.n, 0, 0, &answer.n, NULL, NULL))
++        return false;
++
++    ifi = NLMSG_DATA(&answer.n);
++    len = answer.n.nlmsg_len - NLMSG_LENGTH(sizeof(*ifi));
++    if(len < 0)
++        return false;
++    mst_parse(tb, IFLA_MAX, IFLA_RTA(ifi), len);
++    if(!tb[IFLA_LINKINFO])
++        return false;
++    mst_parse(li, IFLA_INFO_MAX, RTA_DATA(tb[IFLA_LINKINFO]),
++              RTA_PAYLOAD(tb[IFLA_LINKINFO]));
++    if(!li[IFLA_INFO_DATA])
++        return false;
++    mst_parse(br, IFLA_BR_MAX, RTA_DATA(li[IFLA_INFO_DATA]),
++              RTA_PAYLOAD(li[IFLA_INFO_DATA]));
++    if(!br[IFLA_BR_MULTI_BOOLOPT]
++       || RTA_PAYLOAD(br[IFLA_BR_MULTI_BOOLOPT]) < sizeof(*bm))
++        return false;
++    bm = RTA_DATA(br[IFLA_BR_MULTI_BOOLOPT]);
++    return !!(bm->optval & (1 << BR_BOOLOPT_MST_ENABLE));
++}
++
++/* Fills vid2msti[vid] with the MSTI of each VLAN of the bridge. */
++static int vlan_msti_filter(const struct sockaddr_nl *who, struct nlmsghdr *n,
++                            void *arg)
++{
++    __u16 *vid2msti = arg;
++    struct br_vlan_msg *bvm = NLMSG_DATA(n);
++    struct rtattr *rta, *tb[BRIDGE_VLANDB_GOPTS_MAX + 1];
++    int len = n->nlmsg_len - NLMSG_LENGTH(sizeof(*bvm));
++    int vid, last;
++
++    if(n->nlmsg_type != RTM_NEWVLAN || len < 0)
++        return 0;
++    for(rta = MST_RTA(bvm); RTA_OK(rta, len); rta = RTA_NEXT(rta, len))
++    {
++        if((rta->rta_type & NLA_TYPE_MASK) != BRIDGE_VLANDB_GLOBAL_OPTIONS)
++            continue;
++        mst_parse(tb, BRIDGE_VLANDB_GOPTS_MAX, RTA_DATA(rta),
++                  RTA_PAYLOAD(rta));
++        if(!tb[BRIDGE_VLANDB_GOPTS_ID] || !tb[BRIDGE_VLANDB_GOPTS_MSTI])
++            continue;
++        vid = mst_rta_u16(tb[BRIDGE_VLANDB_GOPTS_ID]);
++        last = tb[BRIDGE_VLANDB_GOPTS_RANGE]
++               ? mst_rta_u16(tb[BRIDGE_VLANDB_GOPTS_RANGE]) : vid;
++        for(; vid <= last && vid <= MAX_VID; ++vid)
++            vid2msti[vid] = mst_rta_u16(tb[BRIDGE_VLANDB_GOPTS_MSTI]);
++    }
++    return 0;
++}
++
++static int br_get_vlan_mstis(int br_index, __u16 *vid2msti)
++{
++    struct
++    {
++        struct nlmsghdr n;
++        struct br_vlan_msg bvm;
++        char buf[64];
++    } req;
++
++    memset(&req, 0, sizeof(req));
++    req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct br_vlan_msg));
++    req.n.nlmsg_type = RTM_GETVLAN;
++    req.bvm.family = PF_BRIDGE;
++    req.bvm.ifindex = br_index;
++    addattr32(&req.n, sizeof(req), BRIDGE_VLANDB_DUMP_FLAGS,
++              BRIDGE_VLANDB_DUMPF_GLOBAL);
++    return mst_dump(&req.n, vlan_msti_filter, vid2msti);
++}
++
++static int br_set_vlan_msti(int br_index, __u16 vid, __u16 msti)
++{
++    struct
++    {
++        struct nlmsghdr n;
++        struct br_vlan_msg bvm;
++        char buf[64];
++    } req;
++    struct rtattr *nest;
++
++    memset(&req, 0, sizeof(req));
++    req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct br_vlan_msg));
++    req.n.nlmsg_flags = NLM_F_REQUEST;
++    req.n.nlmsg_type = RTM_NEWVLAN;
++    req.bvm.family = PF_BRIDGE;
++    req.bvm.ifindex = br_index;
++    nest = mst_nest_start(&req.n, sizeof(req), BRIDGE_VLANDB_GLOBAL_OPTIONS);
++    addattr_l(&req.n, sizeof(req), BRIDGE_VLANDB_GOPTS_ID, &vid, sizeof(vid));
++    addattr_l(&req.n, sizeof(req), BRIDGE_VLANDB_GOPTS_MSTI, &msti,
++              sizeof(msti));
++    mst_nest_end(&req.n, nest);
++    return rtnl_talk(&rth_state, &req.n, 0, 0, NULL, NULL, NULL);
++}
++
++/* Port states in the MSTIs, as the kernel has them */
++typedef struct
++{
++    int if_index;
++    __u16 msti;
++    __u8 state;
++} mst_port_state_t;
++
++typedef struct
++{
++    int br_index;
++    int count, size;
++    mst_port_state_t *entries;
++} mst_port_states_t;
++
++static int mst_state_filter(const struct sockaddr_nl *who, struct nlmsghdr *n,
++                            void *arg)
++{
++    mst_port_states_t *states = arg;
++    struct ifinfomsg *ifi = NLMSG_DATA(n);
++    struct rtattr *tb[IFLA_MAX + 1], *spec[IFLA_BRIDGE_MAX + 1];
++    struct rtattr *rta, *entry[IFLA_BRIDGE_MST_ENTRY_MAX + 1];
++    int len = n->nlmsg_len - NLMSG_LENGTH(sizeof(*ifi));
++    int rem;
++
++    if(n->nlmsg_type != RTM_NEWLINK || len < 0)
++        return 0;
++    mst_parse(tb, IFLA_MAX, IFLA_RTA(ifi), len);
++    if(!tb[IFLA_MASTER] || !tb[IFLA_AF_SPEC]
++       || *(int *)RTA_DATA(tb[IFLA_MASTER]) != states->br_index)
++        return 0;
++    mst_parse(spec, IFLA_BRIDGE_MAX, RTA_DATA(tb[IFLA_AF_SPEC]),
++              RTA_PAYLOAD(tb[IFLA_AF_SPEC]));
++    if(!spec[IFLA_BRIDGE_MST])
++        return 0;
++    rem = RTA_PAYLOAD(spec[IFLA_BRIDGE_MST]);
++    for(rta = RTA_DATA(spec[IFLA_BRIDGE_MST]); RTA_OK(rta, rem);
++        rta = RTA_NEXT(rta, rem))
++    {
++        if((rta->rta_type & NLA_TYPE_MASK) != IFLA_BRIDGE_MST_ENTRY)
++            continue;
++        mst_parse(entry, IFLA_BRIDGE_MST_ENTRY_MAX, RTA_DATA(rta),
++                  RTA_PAYLOAD(rta));
++        if(!entry[IFLA_BRIDGE_MST_ENTRY_MSTI]
++           || !entry[IFLA_BRIDGE_MST_ENTRY_STATE])
++            continue;
++        if(states->count == states->size)
++        {
++            int size = states->size ? 2 * states->size : 64;
++            mst_port_state_t *e = realloc(states->entries,
++                                          size * sizeof(*e));
++            if(!e)
++                return -1;
++            states->entries = e;
++            states->size = size;
++        }
++        states->entries[states->count++] = (mst_port_state_t){
++            .if_index = ifi->ifi_index,
++            .msti = mst_rta_u16(entry[IFLA_BRIDGE_MST_ENTRY_MSTI]),
++            .state = mst_rta_u8(entry[IFLA_BRIDGE_MST_ENTRY_STATE]),
++        };
++    }
++    return 0;
++}
++
++static int br_get_mst_states(mst_port_states_t *states)
++{
++    struct
++    {
++        struct nlmsghdr n;
++        struct ifinfomsg ifi;
++        char buf[64];
++    } req;
++
++    memset(&req, 0, sizeof(req));
++    req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg));
++    req.n.nlmsg_type = RTM_GETLINK;
++    req.ifi.ifi_family = PF_BRIDGE;
++    addattr32(&req.n, sizeof(req), IFLA_EXT_MASK, RTEXT_FILTER_MST);
++    return mst_dump(&req.n, mst_state_filter, states);
++}
++
++static int br_set_mst_state(int if_index, __u16 msti, __u8 state)
++{
++    struct
++    {
++        struct nlmsghdr n;
++        struct ifinfomsg ifi;
++        char buf[128];
++    } req;
++    struct rtattr *spec, *mst, *entry;
++
++    memset(&req, 0, sizeof(req));
++    req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg));
++    req.n.nlmsg_flags = NLM_F_REQUEST;
++    req.n.nlmsg_type = RTM_SETLINK;
++    req.ifi.ifi_family = PF_BRIDGE;
++    req.ifi.ifi_index = if_index;
++    spec = mst_nest_start(&req.n, sizeof(req), IFLA_AF_SPEC);
++    mst = mst_nest_start(&req.n, sizeof(req), IFLA_BRIDGE_MST);
++    entry = mst_nest_start(&req.n, sizeof(req), IFLA_BRIDGE_MST_ENTRY);
++    addattr_l(&req.n, sizeof(req), IFLA_BRIDGE_MST_ENTRY_MSTI, &msti,
++              sizeof(msti));
++    /* addattr_l, not addattr8: the nests end at the padded tail */
++    addattr_l(&req.n, sizeof(req), IFLA_BRIDGE_MST_ENTRY_STATE, &state,
++              sizeof(state));
++    mst_nest_end(&req.n, entry);
++    mst_nest_end(&req.n, mst);
++    mst_nest_end(&req.n, spec);
++    return rtnl_talk(&rth_state, &req.n, 0, 0, NULL, NULL, NULL);
++}
++
++/* Sets the state of a port in an MSTI if the kernel has one, i.e. the port
++ * is a member of a VLAN of the MSTI. br_mst_sync catches up when that
++ * changes. */
++static void br_mst_set_port_state(per_tree_port_t *ptp)
++{
++    port_t *prt = ptp->port;
++    bridge_t *br = prt->bridge;
++    mst_port_states_t states = { .br_index = br->sysdeps.if_index };
++    __u16 msti = __be16_to_cpu(ptp->MSTID);
++    int i;
++
++    if(!br->sysdeps.mst_enabled || 0 > br_get_mst_states(&states))
++        goto out;
++    for(i = 0; i < states.count; ++i)
++    {
++        mst_port_state_t *e = &states.entries[i];
++        if(e->if_index != prt->sysdeps.if_index || e->msti != msti)
++            continue;
++        if(e->state != ptp->state
++           && 0 > br_set_mst_state(e->if_index, msti, ptp->state))
++            ERROR_MSTINAME(br, prt, ptp, "Couldn't set kernel MST state");
++        break;
++    }
++out:
++    free(states.entries);
++}
++
++/* Programs the kernel's VLAN-to-MSTI mapping from mstpd's tables, and the
++ * port states of all MSTIs. With reset, maps all VLANs to the CIST. */
++static void br_mst_sync(bridge_t *br, bool reset)
++{
++    static __u16 vid2msti[MAX_VID + 2];
++    mst_port_states_t states = { .br_index = br->sysdeps.if_index };
++    port_t *prt;
++    per_tree_port_t *ptp;
++    tree_t *tree;
++    __u16 want;
++    int vid, i;
++
++    br->sysdeps.mst_sync_pending = false;
++    br->sysdeps.mst_enabled = br_mst_enabled(br->sysdeps.if_index);
++    if(!br->sysdeps.mst_enabled)
++        return;
++
++    for(vid = 0; vid <= MAX_VID + 1; ++vid)
++        vid2msti[vid] = VLAN_ABSENT;
++    if(0 > br_get_vlan_mstis(br->sysdeps.if_index, vid2msti))
++    {
++        ERROR_BRNAME(br, "Couldn't get the kernel's VLAN MSTIs");
++        return;
++    }
++    for(vid = 1; vid <= MAX_VID; ++vid)
++    {
++        if(VLAN_ABSENT == vid2msti[vid])
++            continue;
++        want = 0;
++        if(!reset)
++        {
++            __be16 MSTID = br->fid2mstid[br->vid2fid[vid]];
++            list_for_each_entry(tree, &br->trees, bridge_list)
++                if(tree->MSTID == MSTID)
++                    want = __be16_to_cpu(MSTID);
++        }
++        if(vid2msti[vid] == want)
++            continue;
++        INFO_BRNAME(br, "VLAN %d in MSTI %hu", vid, want);
++        if(0 > br_set_vlan_msti(br->sysdeps.if_index, vid, want))
++            ERROR_BRNAME(br, "Couldn't map VLAN %d to MSTI %hu", vid, want);
++    }
++    if(reset)
++        return;
++
++    if(0 > br_get_mst_states(&states))
++    {
++        ERROR_BRNAME(br, "Couldn't get the kernel's MST states");
++        goto out;
++    }
++    for(i = 0; i < states.count; ++i)
++    {
++        mst_port_state_t *e = &states.entries[i];
++        if(0 == e->msti || !(prt = find_if(br, e->if_index)))
++            continue;
++        list_for_each_entry(ptp, &prt->trees, port_list)
++        {
++            if(__be16_to_cpu(ptp->MSTID) != e->msti || ptp->state == e->state)
++                continue;
++            if(0 > br_set_mst_state(e->if_index, e->msti, ptp->state))
++                ERROR_MSTINAME(br, prt, ptp, "Couldn't set kernel MST state");
++        }
++    }
++out:
++    free(states.entries);
++}
++
++/* A VLAN of a bridge or of one of its ports changed. */
++void bridge_vlan_notify(int if_index)
++{
++    bridge_t *br;
++    list_for_each_entry(br, &bridges, list)
++        if(br->sysdeps.if_index == if_index || find_if(br, if_index))
++            br->sysdeps.mst_sync_pending = true;
++}
++
++/* After a batch of notifications */
++void bridge_vlan_notify_done(void)
++{
++    bridge_t *br;
++    list_for_each_entry(br, &bridges, list)
++        if(br->sysdeps.mst_sync_pending)
++            br_mst_sync(br, false);
++}
++
+ /* External actions for MSTP protocol */
+ 
+ void MSTP_OUT_set_state(per_tree_port_t *ptp, int new_state)
+@@ -500,6 +911,10 @@ void MSTP_OUT_set_state(per_tree_port_t *ptp, int new_state)
+             ERROR_PRTNAME(br, prt, "Couldn't set kernel bridge state %s",
+                           state_name);
+     }
++    else
++    { /* MSTI */
++        br_mst_set_port_state(ptp);
++    }
+ }
+ 
+ /* This function initiates process of flushing
+@@ -513,9 +928,10 @@ void MSTP_OUT_flush_all_fids(per_tree_port_t * ptp)
+     port_t *prt = ptp->port;
+     bridge_t *br = prt->bridge;
+ 
+-    /* Translate CIST flushing to the kernel bridge code */
+-    if(0 == ptp->MSTID)
+-    { /* CIST */
++    /* Translate CIST flushing to the kernel bridge code. The kernel cannot
++     * flush the FIDs of one MSTI: flush the whole port for an MSTI too. */
++    if(0 == ptp->MSTID || br->sysdeps.mst_enabled)
++    {
+         if(0 > br_flush_port(prt->sysdeps.name))
+             ERROR_PRTNAME(br, prt,
+                           "Couldn't flush kernel bridge forwarding database");
+@@ -770,6 +1186,7 @@ int CTL_create_msti(int br_index, __u16 mstid)
+     CTL_CHECK_BRIDGE;
+     if((!driver_create_msti(br, mstid)) || (!MSTP_IN_create_msti(br, mstid)))
+         return -1;
++    br_mst_sync(br, false);
+     return 0;
+ }
+ 
+@@ -778,6 +1195,7 @@ int CTL_delete_msti(int br_index, __u16 mstid)
+     CTL_CHECK_BRIDGE;
+     if((!driver_delete_msti(br, mstid)) || (!MSTP_IN_delete_msti(br, mstid)))
+         return -1;
++    br_mst_sync(br, false);
+     return 0;
+ }
+ 
+@@ -814,25 +1232,37 @@ int CTL_get_fids2mstids(int br_index, __u16 *fids2mstids)
+ int CTL_set_vid2fid(int br_index, __u16 vid, __u16 fid)
+ {
+     CTL_CHECK_BRIDGE;
+-    return MSTP_IN_set_vid2fid(br, vid, fid) ? 0 : -1;
++    if(!MSTP_IN_set_vid2fid(br, vid, fid))
++        return -1;
++    br_mst_sync(br, false);
++    return 0;
+ }
+ 
+ int CTL_set_fid2mstid(int br_index, __u16 fid, __u16 mstid)
+ {
+     CTL_CHECK_BRIDGE;
+-    return MSTP_IN_set_fid2mstid(br, fid, mstid) ? 0 : -1;
++    if(!MSTP_IN_set_fid2mstid(br, fid, mstid))
++        return -1;
++    br_mst_sync(br, false);
++    return 0;
+ }
+ 
+ int CTL_set_vids2fids(int br_index, __u16 *vids2fids)
+ {
+     CTL_CHECK_BRIDGE;
+-    return MSTP_IN_set_all_vids2fids(br, vids2fids) ? 0 : -1;
++    if(!MSTP_IN_set_all_vids2fids(br, vids2fids))
++        return -1;
++    br_mst_sync(br, false);
++    return 0;
+ }
+ 
+ int CTL_set_fids2mstids(int br_index, __u16 *fids2mstids)
+ {
+     CTL_CHECK_BRIDGE;
+-    return MSTP_IN_set_all_fids2mstids(br, fids2mstids) ? 0 : -1;
++    if(!MSTP_IN_set_all_fids2mstids(br, fids2mstids))
++        return -1;
++    br_mst_sync(br, false);
++    return 0;
+ }
+ 
+ int CTL_add_bridges(int *br_array, int* *ifaces_lists)
+@@ -903,6 +1333,7 @@ int CTL_add_bridges(int *br_array, int* *ifaces_lists)
+                                (if_flags & (IFF_UP | IFF_RUNNING))
+                          );
+         }
++        br_mst_sync(br, false);
+     }
+ 
+     return 0;
+@@ -911,9 +1342,16 @@ int CTL_add_bridges(int *br_array, int* *ifaces_lists)
+ int CTL_del_bridges(int *br_array)
+ {
+     int i, brcount = br_array[0];
++    bridge_t *br;
+ 
+     for(i = 1; i <= brcount; ++i)
++    {
++        /* Leave the kernel's VLANs in the CIST, whose port states govern
++         * them once mstpd no longer runs spanning tree on the bridge. */
++        if((br = find_br(br_array[i])))
++            br_mst_sync(br, true);
+         delete_br_byindex(br_array[i]);
++    }
+ 
+     return 0;
+ }
+diff --git a/brmon.c b/brmon.c
+index aa7e3b7..f1a2534 100644
+--- a/brmon.c
++++ b/brmon.c
+@@ -72,6 +72,14 @@ static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
+     if(n->nlmsg_type == NLMSG_DONE)
+         return 0;
+ 
++    if(n->nlmsg_type == RTM_NEWVLAN || n->nlmsg_type == RTM_DELVLAN)
++    {
++        struct br_vlan_msg *bvm = NLMSG_DATA(n);
++        if(n->nlmsg_len >= NLMSG_LENGTH(sizeof(*bvm)))
++            bridge_vlan_notify(bvm->ifindex);
++        return 0;
++    }
++
+     len -= NLMSG_LENGTH(sizeof(*ifi));
+     if(len < 0)
+     {
+@@ -172,6 +180,7 @@ static inline void br_ev_handler(uint32_t events, struct epoll_event_handler *h)
+     {
+         ERROR("Error on bridge monitoring socket\n");
+     }
++    bridge_vlan_notify_done();
+ }
+ 
+ int init_bridge_ops(void)
+@@ -200,6 +209,12 @@ int init_bridge_ops(void)
+         return -1;
+     }
+ 
++    /* VLAN changes, for the kernel's per-VLAN spanning tree */
++    int group = RTNLGRP_BRVLAN;
++    if(setsockopt(rth.fd, SOL_NETLINK, NETLINK_ADD_MEMBERSHIP, &group,
++                  sizeof(group)) < 0)
++        INFO("Couldn't subscribe to bridge VLAN notifications: %m");
++
+     if(fcntl(rth.fd, F_SETFL, O_NONBLOCK) < 0)
+     {
+         ERROR("Error setting O_NONBLOCK: %m\n");
+-- 
+2.53.0
+
