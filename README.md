@@ -99,7 +99,8 @@ them in step with the table above.
 | `dynamic-layers/rtl83xx-bsp/.../ethernet-switch-os-image-common.inc` | the packagegroup, `ssh-server-dropbear` and the `cli` user, required by the `rtl83xx-image-initramfs` and `rtl83xx-image` bbappends |
 | `dynamic-layers/rtl83xx-bsp/recipes-images/swupdate/` | `ethernet-switch-os-swu-factory` and `ethernet-switch-os-swu-upgrade` with their sw-descriptions |
 | `recipes-clixon/cligen/`, `recipes-clixon/clixon/` | clixon 7.8.0 with native RESTCONF (HTTP/1, no nghttp2), and `clixon_snmp` in `clixon-snmp`, patched for the bridge MIBs |
-| `recipes-clixon/clixon-switch/` | the backend plugin (cargo) with its YANG, `/etc/clixon.xml`, clispec, autocli and factory default (`ETHERNET_SWITCH_OS_LAN_PORTS`, `ETHERNET_SWITCH_OS_LAN_ADDRESS`); init scripts, RESTCONF's in `-restconf`; the status page in `-www` |
+| `recipes-clixon/clixon-switch/` | the backend plugin (cargo) with its YANG, `/etc/clixon.xml`, clispec, autocli and factory default (`ETHERNET_SWITCH_OS_LAN_PORTS`, `ETHERNET_SWITCH_OS_LAN_ADDRESS`); init scripts, RESTCONF's in `-restconf` |
+| `recipes-webui/ethernet-switch-os-webui/` | the status page itself (`files/www`: plain HTML, CSS and JavaScript, no build step), installed to the `http-data` root `clixon-switch_git.bb` passes as `HTTP_DATA_ROOT` |
 | `recipes-networking/mstpd/` | mstpd from meta-oe, patched to program the kernel's per-VLAN spanning tree (MSTP), which the rtl83xx driver offloads |
 | `recipes-networking/net-snmp/` | net-snmp from meta-networking as a minimal SNMPv3-only agent without its init script or MIB files |
 | `recipes-support/swupdate/` | kconfig fragment (U-Boot env, MTD flash handler), web port, `/etc/hwrevision`, `20-ethernet-switch-os-mode` (software set selection, SWUpdate from RAM) |

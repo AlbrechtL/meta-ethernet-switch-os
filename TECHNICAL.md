@@ -18,7 +18,7 @@ target, and traps worth remembering.
 | `/var/run/clixon-switch/snmpd.conf`, `agentx.sock` | snmpd's configuration (with the USM keys, mode 0600), written by the plugin; the AgentX socket (`CLICON_SNMP_AGENT_SOCK`) |
 | `/var/lib/net-snmp/snmpd.conf` | snmpd's persistent data (flash): `engineBoots` |
 | `/usr/share/clixon-switch/yang/` | the main module, its OpenConfig and IETF imports, and the MIBs as YANG (`mib/`) |
-| `/usr/share/clixon-switch/www/` | status page (`index.html`, `app.js`, `style.css`), served at `/` by `clixon_restconf` |
+| `/usr/share/ethernet-switch-os/www/` | status page (`index.html`, `app.js`, `style.css`), served at `/` by `clixon_restconf` |
 | `/usr/share/clixon-switch/factory-default.xml` | first-boot configuration, and the failsafe |
 | `/var/run/clixon-switch/` | datastores (tmpfs); `startup_db` is a symlink to... |
 | `/var/lib/clixon/clixon-switch/startup_db` | ...the saved configuration (flash, kept on upgrade) |
@@ -74,6 +74,26 @@ snmpwalk -v3 -l authPriv -u nms -a SHA -A '...' -x AES -X '...' 192.168.1.1 1.3.
 GETs RESTCONF data; `/system/state` of `clixon-switch` (host name, firmware
 version from `/etc/os-release`, uptime, load, memory) exists for it. Its
 "Firmware update" button opens the SWUpdate web UI on port 8080.
+
+The page lives in **this** layer, in
+`recipes-webui/ethernet-switch-os-webui/files/www`, not in clixon-switch-rs:
+it is the product's face (firmware version, the link to SWUpdate), not part
+of a clixon backend plugin, and editing it here needs no `SRCREV` bump. It
+is plain HTML, CSS and JavaScript with no build step, so the recipe only
+copies the files. `SRC_URI` names the `www` directory rather than each file,
+so adding a page needs no recipe change.
+
+`CLICON_HTTP_DATA_ROOT` still comes from clixon-switch-rs, which generates
+`/etc/clixon.xml`: its Makefile takes `HTTP_DATA_ROOT`, and
+`clixon-switch_git.bb` passes `${datadir}/ethernet-switch-os/www`. **Keep the
+two in step**, or the page is installed where nothing serves it. That
+Makefile also creates the root empty, and `clixon-switch` ships the
+directory, because clixon resolves the root with `realpath()` *before* the
+request path (`http_data_check_file_path()` in
+`apps/restconf/clixon_http_data.c`): with a missing root, every request that
+falls through to http-data fails outright instead of answering 404.
+`/restconf` and `/.well-known` are matched earlier
+(`restconf_http1.c`) and keep working.
 
 SWUpdate's mongoose was not reused for the page: a page on :8080 calling
 RESTCONF on :80 is cross-origin, and neither server sends CORS headers or

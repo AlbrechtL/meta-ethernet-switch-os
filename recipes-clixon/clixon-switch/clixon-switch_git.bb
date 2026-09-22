@@ -4,9 +4,10 @@ configuration to the kernel: front ports in a VLAN-aware bridge, routed \
 VLAN interfaces with static IPv4 addresses or a DHCP client (busybox udhcpc), \
 spanning tree (STP, RSTP, MSTP) with mstpd, and a read-only SNMPv3 agent \
 (snmpd with clixon_snmp for BRIDGE-MIB, Q-BRIDGE-MIB and RSTP-MIB). \
-Also installs the YANG modules, clixon.xml, the CLI specification, the factory \
-default, the udhcpc script, init scripts for the backend and RESTCONF, and \
-a read-only status web page that clixon_restconf serves on its own port."
+Also installs the YANG modules, clixon.xml, the CLI specification, the \
+factory default, the udhcpc script and init scripts for the backend and \
+RESTCONF. The status web page clixon_restconf serves is a separate recipe, \
+ethernet-switch-os-webui."
 HOMEPAGE = "https://github.com/AlbrechtL/clixon-switch-rs"
 # The repository and the OpenConfig modules are Apache-2.0, the IETF/IANA
 # modules BSD-2-Clause (license text in each module header). The MIB
@@ -20,7 +21,7 @@ SRC_URI = " \
     file://clixon-restconf \
 "
 # Update together with the crate list: bitbake -c update_crates clixon-switch
-SRCREV = "6ab90e9986d15661e5d4ae007bf5c3d69600586b"
+SRCREV = "bc15836b4145d28a3deb7c7060c8758eef844eb5"
 PV = "0.1.0+git"
 
 require ${BPN}-crates.inc
@@ -48,6 +49,7 @@ do_install() {
         DATADIR=${datadir} \
         LOCALSTATEDIR=${localstatedir} \
         RESTCONF_PORT=80 \
+        HTTP_DATA_ROOT=${datadir}/ethernet-switch-os/www \
         LAN_PORTS="${ETHERNET_SWITCH_OS_LAN_PORTS}" \
         LAN_ADDRESS="${ETHERNET_SWITCH_OS_LAN_ADDRESS}" \
         BUILDDIR=${B}/make \
@@ -77,15 +79,17 @@ pkg_postinst:${PN}() {
         echo '${bindir}/clixon_cli' >> $D${sysconfdir}/shells
 }
 
-PACKAGES =+ "${PN}-restconf ${PN}-www"
+PACKAGES =+ "${PN}-restconf"
 
 FILES:${PN}-restconf = "${sysconfdir}/init.d/clixon-restconf"
-# The status page at http://<switch>/, served by clixon_restconf (http-data in
-# clixon.xml). It reads the firmware version from os-release.
-FILES:${PN}-www = "${datadir}/clixon-switch/www"
 
+# ${datadir}/ethernet-switch-os/www is the http-data root, which the Makefile
+# creates empty because clixon_restconf resolves it before every request and
+# fails when it is missing. ethernet-switch-os-webui fills it; sharing a
+# directory between packages is fine, only duplicate files are a conflict.
 FILES:${PN} += " \
     ${base_sbindir}/bridge-stp \
+    ${datadir}/ethernet-switch-os/www \
     ${sysconfdir}/resolv.conf \
     ${libdir}/clixon-switch \
     ${datadir}/clixon-switch \
@@ -97,10 +101,11 @@ FILES:${PN} += " \
 # mstpd-mstpd: mstpd and mstpctl, patched in recipes-networking/mstpd.
 # clixon-snmp and net-snmp-server-snmpd: the SNMP agent, both started by the
 # plugin; trimmed in recipes-networking/net-snmp, patched in recipes-clixon.
+# os-release: the plugin reads /etc/os-release for the firmware version in
+# /system/state.
 RDEPENDS:${PN} = "clixon base-files ${VIRTUAL-RUNTIME_base-utils} mstpd-mstpd \
-    clixon-snmp net-snmp-server-snmpd"
+    clixon-snmp net-snmp-server-snmpd os-release"
 RDEPENDS:${PN}-restconf = "${PN}"
-RDEPENDS:${PN}-www = "${PN}-restconf os-release"
 
 # The backend configures the network, so it takes the old network script's
 # slot: before dropbear (10). RESTCONF after the backend.

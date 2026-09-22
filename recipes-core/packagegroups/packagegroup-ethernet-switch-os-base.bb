@@ -18,7 +18,7 @@ RDEPENDS:${PN} = " \
     clixon \
     clixon-switch \
     clixon-switch-restconf \
-    clixon-switch-www \
+    ethernet-switch-os-webui \
     swupdate \
     swupdate-www \
 "
