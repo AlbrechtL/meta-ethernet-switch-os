@@ -4,6 +4,15 @@
 > the help of AI. It has not undergone thorough review or hardening, and
 > should not be assumed suitable for production use.
 
+Part of **Ethernet Switch OS**. The build lives in
+[ethernet-switch-os](https://github.com/AlbrechtL/ethernet-switch-os), which
+checks this layer out with [kas](https://kas.readthedocs.io/) and builds the
+images. The other pieces are
+[clixon-switch-rs](https://github.com/AlbrechtL/clixon-switch-rs) (the backend
+plugin), [meta-rtl83xx-bsp](https://github.com/AlbrechtL/meta-rtl83xx-bsp)
+(the hardware) and [rtl838x-qemu](https://github.com/AlbrechtL/rtl838x-qemu)
+(testing without hardware).
+
 Userspace policy for RTL83xx switches, on top of `meta-rtl83xx-bsp`:
 
 - [clixon](https://www.clicon.org/) with the
@@ -37,43 +46,51 @@ The BSP stays hardware-only and boots without this layer.
 See [TECHNICAL.md](TECHNICAL.md) for the clixon layout on the target and
 known traps/pitfalls.
 
-## Layers
+## Building
 
-| Layer | Branch | Pinned at |
-|---|---|---|
-| meta-openembedded (`meta-oe`, `meta-python`, `meta-networking`) | wrynose | `14282a02be9c74a1276a7cda7d6c89e054699a11` |
-| meta-swupdate (`https://github.com/sbabic/meta-swupdate`) | wrynose | `c0658455606b3a37d85d7cf03703d8b8d2ead667` |
+Not built on its own.
+[ethernet-switch-os](https://github.com/AlbrechtL/ethernet-switch-os) holds the
+whole build configuration -- which layers, which branches, which machine -- and
+checks them out with kas:
 
 ```sh
-cd layers
-git clone -b wrynose https://git.openembedded.org/meta-openembedded
-git clone -b wrynose https://github.com/sbabic/meta-swupdate
-cd ../build && . init-build-env
-bitbake-layers add-layer ../layers/meta-openembedded/meta-oe \
-    ../layers/meta-openembedded/meta-python \
-    ../layers/meta-openembedded/meta-networking \
-    ../layers/meta-swupdate ../layers/meta-ethernet-switch-os
-bitbake-config-build disable-fragment distro/poky-tiny
-bitbake-config-build enable-fragment distro/ethernet-switch-os
-bitbake-config-build enable-fragment machine/zyxel-gs1900-8-a1
+git clone https://github.com/AlbrechtL/ethernet-switch-os
+cd ethernet-switch-os
+make container      # the development image, once
+make build
 ```
 
-`meta-networking` provides net-snmp. Nothing here builds from `meta-python`,
-but `meta-networking` declares it in `LAYERDEPENDS`, so it has to be enabled
-too or parsing stops with "layer 'networking-layer' depends on layer
-'meta-python'".
+This layer lands in `layers/meta-ethernet-switch-os`, an ordinary clone of
+`master` that can be edited and committed in place.
 
-These layers (and `meta-rtl83xx-bsp`) are added by hand, not through
-`config/config-upstream.json`, so a `bitbake-setup update` that regenerates
-`bblayers.conf` drops them again.
+### What the layer needs
+
+| Layer | Branch |
+|---|---|
+| openembedded-core (`meta`) | wrynose |
+| meta-yocto (`meta-poky`) | wrynose |
+| meta-openembedded (`meta-oe`, `meta-python`, `meta-networking`) | wrynose |
+| meta-swupdate | wrynose |
+
+No revisions here: `kas/os.yml` in the build repository is the list that is
+actually used, and it follows the branch tips.
+
+`meta-poky` is only there for `conf/distro/poky-tiny.conf`, which this layer's
+distro requires. `meta-networking` provides net-snmp. Nothing here builds from
+`meta-python`, but `meta-networking` declares it in `LAYERDEPENDS`, so it has
+to be enabled too or parsing stops with "layer 'networking-layer' depends on
+layer 'meta-python'".
+
+`meta-rtl83xx-bsp` is deliberately *not* a dependency. `LAYERDEPENDS` does not
+name it, and the image and `.swu` recipes under `dynamic-layers/rtl83xx-bsp/`
+are only parsed where that layer is present -- which is what lets a second BSP
+be added without touching this one.
 
 ## Built images
 
-```sh
-bitbake ethernet-switch-os-swu-factory ethernet-switch-os-swu-upgrade
-```
-
-lands in `build/tmp/deploy/images/zyxel-gs1900-8-a1/`:
+`bitbake ethernet-switch-os-swu-factory ethernet-switch-os-swu-upgrade` --
+the default target of the board file in the build repository -- lands in
+`build/tmp/deploy/images/zyxel-gs1900-8-a1/`:
 
 | File | What it is for |
 |---|---|
@@ -85,10 +102,13 @@ The boot images carry `${DISTRO}` and `${MACHINE}`, so they say which OS
 and which board they are for. See the image table in `meta-rtl83xx-bsp`'s
 README for the intermediate artifacts.
 
-`.github/workflows/build.yml` builds exactly these on every push to
-`master` and on pull requests, and uploads them as a job artifact. The
-layer revisions it clones are pinned in the workflow's `env:` block; keep
-them in step with the table above.
+The images themselves are built by CI in
+[ethernet-switch-os](https://github.com/AlbrechtL/ethernet-switch-os), which is
+where the layer revisions live. What runs here is
+`.github/workflows/check.yml`: it parses this layer inside that same build
+configuration on every push and pull request, without executing a task, so a
+broken recipe or a missing dependency shows up in minutes instead of after a
+full build.
 
 ## Contents
 
