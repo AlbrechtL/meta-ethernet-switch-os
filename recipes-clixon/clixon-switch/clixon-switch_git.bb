@@ -20,13 +20,19 @@ SRC_URI = " \
     file://clixon-backend \
     file://clixon-restconf \
 "
-# Update together with the crate list: bitbake -c update_crates clixon-switch
-SRCREV = "bc15836b4145d28a3deb7c7060c8758eef844eb5"
+# Always build the current head of the master branch.
+SRCREV = "${AUTOREV}"
 PV = "0.1.0+git"
 
-require ${BPN}-crates.inc
+inherit cargo update-rc.d
 
-inherit cargo cargo-update-recipe-crates update-rc.d
+# There is no crate list to keep in step with upstream's Cargo.lock: cargo
+# downloads the crates itself in do_compile, which therefore needs network
+# access. --frozen would forbid that; --locked still insists on Cargo.lock.
+CARGO_DISABLE_BITBAKE_VENDORING = "1"
+CARGO_BUILD_FLAGS:remove = "--frozen"
+CARGO_BUILD_FLAGS:append = " --locked"
+do_compile[network] = "1"
 
 DEPENDS += "clixon"
 
