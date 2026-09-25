@@ -40,8 +40,10 @@ DEPENDS += "clixon"
 CARGO_BUILD_FLAGS += "-p clixon-switch-plugin"
 
 # Factory default: front ports as labelled by SWITCH_PORT() in the device
-# tree, and the management address on vlan1.
+# tree, and the management address on vlan1. The port list is per board, see
+# conf/distro/include/ethernet-switch-os-boards.inc, and with it the package.
 ETHERNET_SWITCH_OS_LAN_PORTS ?= "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8"
+PACKAGE_ARCH = "${MACHINE_ARCH}"
 ETHERNET_SWITCH_OS_LAN_ADDRESS ?= "192.168.1.1/24"
 
 do_install() {

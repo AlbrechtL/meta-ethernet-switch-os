@@ -3,8 +3,11 @@ software =
 	version = "@@DISTRO_VERSION@@";
 	description = "RTL83xx upgrade: firmware only, data partition kept";
 
-	/* Revision field of /etc/hwrevision ("gs1900-8 a1"). */
-	hardware-compatibility: [ "a1" ];
+	/*
+	 * Revision field of /etc/hwrevision, unique per board, so that a board
+	 * refuses another board's firmware. See ethernet-switch-os-boards.inc.
+	 */
+	hardware-compatibility: [ "@@ETHERNET_SWITCH_OS_HW_COMPAT@@" ];
 
 	/* No writes to the U-Boot environment, see the factory sw-description. */
 	bootloader_transaction_marker = false;

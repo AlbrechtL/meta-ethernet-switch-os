@@ -1,0 +1,37 @@
+#!/bin/sh
+# Reset key, run by triggerhappy with "press" and "release".
+#
+#   released within 5 seconds    reboot
+#   held for 5 seconds or more   factory reset: delete the saved configuration
+#                                (see docs/maintenance.md), then reboot
+#
+# A release without a recorded press does nothing. That is a key that was
+# already held, or a DIP switch already on, when thd started.
+
+STAMP=/var/run/ethernet-switch-os-reset-key
+SAVED=/var/lib/clixon/clixon-switch/startup_db
+HOLD=5
+
+case "$1" in
+    press)
+        date +%s > "$STAMP"
+        ;;
+    release)
+        [ -f "$STAMP" ] || exit 0
+        pressed=$(cat "$STAMP")
+        rm -f "$STAMP"
+        held=$(( $(date +%s) - pressed ))
+        if [ "$held" -ge "$HOLD" ]; then
+            logger -t reset-key "held ${held}s: factory reset and reboot"
+            rm -f "$SAVED"
+            sync
+        else
+            logger -t reset-key "released after ${held}s: reboot"
+        fi
+        reboot
+        ;;
+    *)
+        echo "usage: $0 press|release" >&2
+        exit 1
+        ;;
+esac

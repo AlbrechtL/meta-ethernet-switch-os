@@ -1,0 +1,43 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          triggerhappy
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: triggerhappy input event daemon
+### END INIT INFO
+#
+# Runs the rules in /etc/triggerhappy/triggers.d as root on the input devices
+# present at boot. Buttons on these boards are built in, so there is no
+# hotplugging (th-cmd) to handle.
+
+DAEMON=/usr/sbin/thd
+PIDFILE=/var/run/thd.pid
+
+test -x "$DAEMON" || exit 0
+
+case "$1" in
+    start)
+        set -- /dev/input/event*
+        [ -e "$1" ] || exit 0
+        echo -n "Starting triggerhappy: "
+        start-stop-daemon -S -q -p $PIDFILE -x $DAEMON -- \
+            --daemon --pidfile $PIDFILE \
+            --triggers /etc/triggerhappy/triggers.d/ \
+            --socket /var/run/thd.socket "$@" && echo "thd."
+        ;;
+    stop)
+        echo -n "Stopping triggerhappy: "
+        start-stop-daemon -K -q -p $PIDFILE && echo "thd."
+        rm -f $PIDFILE
+        ;;
+    restart|force-reload)
+        "$0" stop
+        "$0" start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0

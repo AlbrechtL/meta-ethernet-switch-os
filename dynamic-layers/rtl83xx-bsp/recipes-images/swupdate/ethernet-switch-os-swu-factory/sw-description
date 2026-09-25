@@ -3,8 +3,11 @@ software =
 	version = "@@DISTRO_VERSION@@";
 	description = "RTL83xx factory install: firmware, empty data partition";
 
-	/* Revision field of /etc/hwrevision ("gs1900-8 a1"). */
-	hardware-compatibility: [ "a1" ];
+	/*
+	 * Revision field of /etc/hwrevision, unique per board, so that a board
+	 * refuses another board's firmware. See ethernet-switch-os-boards.inc.
+	 */
+	hardware-compatibility: [ "@@ETHERNET_SWITCH_OS_HW_COMPAT@@" ];
 
 	/*
 	 * Keep "recovery_status" and "ustate" out of the U-Boot environment. The
@@ -33,8 +36,9 @@ software =
 			);
 
 			/*
-			 * No bootenv. "bootpartition" lives in u-boot-env2, which is not
-			 * in /etc/fw_env.config; it must already read 0 (boot 0x260000).
+			 * No bootenv. The loader has to boot "firmware" already. On the
+			 * GS1900 "bootpartition" lives in u-boot-env2, which is not in
+			 * /etc/fw_env.config; it must already read 0 (boot 0x260000).
 			 */
 		};
 	};

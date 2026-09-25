@@ -18,8 +18,10 @@ Userspace policy for RTL83xx switches, on top of `meta-rtl83xx-bsp`:
 - [clixon](https://www.clicon.org/) with the
   [clixon-switch](https://github.com/AlbrechtL/clixon-switch-rs) backend
   plugin (Rust), which configures the network from an OpenConfig
-  configuration. Factory default: `lan1`..`lan8` as access ports in VLAN 1 of
-  the VLAN-aware bridge `br-lan`, and **192.168.1.1/24** on `vlan1`.
+  configuration. Factory default: all front ports (`lan1`..`lan8` on the
+  GS1900-8, per board in `conf/distro/include/ethernet-switch-os-boards.inc`)
+  as access ports in VLAN 1 of the VLAN-aware bridge `br-lan`, and
+  **192.168.1.1/24** on `vlan1`.
   `ssh cli@192.168.1.1` opens the clixon CLI directly, and RESTCONF answers on
   **http://192.168.1.1/restconf** (plain HTTP/1, no authentication). A
   read-only status page (system, management address, ports, VLANs) on

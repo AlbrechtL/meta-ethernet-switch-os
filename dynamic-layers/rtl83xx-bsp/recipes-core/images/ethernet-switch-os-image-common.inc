@@ -14,3 +14,14 @@ IMAGE_FEATURES += "ssh-server-dropbear"
 # password is for the proof of concept only.
 inherit extrausers
 EXTRA_USERS_PARAMS = "useradd -m -d /home/cli -s ${bindir}/clixon_cli -G clicon -p '' cli;"
+
+# Board specific packages, from conf/distro/include/ethernet-switch-os-boards.inc.
+IMAGE_INSTALL:append = " ${ETHERNET_SWITCH_OS_BOARD_PACKAGES}"
+
+# SWUpdate matches the revision field against hardware-compatibility in
+# sw-description. Written here rather than by the tune-specific swupdate
+# package, because it differs per board.
+ROOTFS_POSTPROCESS_COMMAND += "ethernet_switch_os_hwrevision;"
+ethernet_switch_os_hwrevision () {
+    echo "${ETHERNET_SWITCH_OS_HWREVISION}" > ${IMAGE_ROOTFS}${sysconfdir}/hwrevision
+}

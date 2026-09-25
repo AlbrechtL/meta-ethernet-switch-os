@@ -7,7 +7,6 @@ SRC_URI += " \
     file://ethernet-switch-os.cfg \
     file://09-ethernet-switch-os-web \
     file://20-ethernet-switch-os-mode \
-    file://hwrevision \
 "
 
 # swupdate.inc derives DEPENDS (openssl, libubootenv, mtd-utils, ...) from
@@ -41,12 +40,11 @@ do_install:append() {
     # Software set selection, and SWUpdate from RAM on the flash system.
     install -m 0644 ${UNPACKDIR}/20-ethernet-switch-os-mode ${D}${sysconfdir}/swupdate/conf.d/
 
-    # Matched against hardware-compatibility in sw-description.
-    install -m 0644 ${UNPACKDIR}/hwrevision ${D}${sysconfdir}/hwrevision
+    # /etc/hwrevision is per board, so the images write it, not this package
+    # (ethernet-switch-os-image-common.inc).
 }
 
 FILES:${PN} += " \
-    ${sysconfdir}/hwrevision \
     ${sysconfdir}/swupdate/conf.d/20-ethernet-switch-os-mode \
 "
 FILES:${PN}-www += "${sysconfdir}/swupdate/conf.d/09-ethernet-switch-os-web"
