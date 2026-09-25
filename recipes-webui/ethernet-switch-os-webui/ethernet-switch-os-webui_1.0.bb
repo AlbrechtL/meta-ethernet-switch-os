@@ -1,10 +1,13 @@
-SUMMARY = "Read-only status web page for the switch"
-DESCRIPTION = "Static HTML, CSS and JavaScript status page, served at / by \
-clixon_restconf (clixon's http-data) on the same origin as /restconf. It reads \
+SUMMARY = "Status and settings web page for the switch"
+DESCRIPTION = "Static HTML, CSS and JavaScript page, served at / by \
+clixon_restconf (clixon's http-data) on the same origin as /restconf. It shows \
 the system state, the routed VLAN interfaces with their addresses and DHCP \
-lease, the ports and the VLANs or port-based groups over RESTCONF, refreshes \
-every 5 seconds and links to the SWUpdate web UI on port 8080. Read-only, and \
-without authentication, like RESTCONF itself."
+lease, the ports, the VLANs or port-based groups, spanning tree and SNMP, \
+refreshed every 5 seconds, and changes them over RESTCONF: port, VLAN, \
+management address, spanning tree, SNMP user and system settings, applied to \
+running and kept once saved to startup. SNMP keys are localized in the \
+browser. Links to the SWUpdate web UI on port 8080. Without authentication, \
+like RESTCONF itself."
 HOMEPAGE = "https://github.com/AlbrechtL/meta-ethernet-switch-os"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"

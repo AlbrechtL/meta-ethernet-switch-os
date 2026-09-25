@@ -24,9 +24,10 @@ Userspace policy for RTL83xx switches, on top of `meta-rtl83xx-bsp`:
   **192.168.1.1/24** on `vlan1`.
   `ssh cli@192.168.1.1` opens the clixon CLI directly, and RESTCONF answers on
   **http://192.168.1.1/restconf** (plain HTTP/1, no authentication). A
-  read-only status page (system, management address, ports, VLANs) on
-  **http://192.168.1.1/** is served by `clixon_restconf` as well and reads
-  only RESTCONF; it links to the SWUpdate web UI. A commit
+  status and settings page (system, management address, ports, VLANs,
+  spanning tree, SNMP) on **http://192.168.1.1/** is served by
+  `clixon_restconf` as well and only talks RESTCONF; it links to the
+  SWUpdate web UI. A commit
   applies a change; only `save` (or a copy-config to startup) makes it survive
   a reboot. Spanning tree (STP, RSTP, MSTP, OpenConfig `/stp`) runs in
   mstpd, managed by the plugin; it is off by default. So is the read-only

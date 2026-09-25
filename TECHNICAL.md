@@ -18,7 +18,7 @@ target, and traps worth remembering.
 | `/var/run/clixon-switch/snmpd.conf`, `agentx.sock` | snmpd's configuration (with the USM keys, mode 0600), written by the plugin; the AgentX socket (`CLICON_SNMP_AGENT_SOCK`) |
 | `/var/lib/net-snmp/snmpd.conf` | snmpd's persistent data (flash): `engineBoots` |
 | `/usr/share/clixon-switch/yang/` | the main module, its OpenConfig and IETF imports, and the MIBs as YANG (`mib/`) |
-| `/usr/share/ethernet-switch-os/www/` | status page (`index.html`, `app.js`, `style.css`), served at `/` by `clixon_restconf` |
+| `/usr/share/ethernet-switch-os/www/` | web page (`index.html`, `style.css`, `app.js`, `settings.js`, `sha1.js`), served at `/` by `clixon_restconf` |
 | `/usr/share/clixon-switch/factory-default.xml` | first-boot configuration, and the failsafe |
 | `/var/run/clixon-switch/` | datastores (tmpfs); `startup_db` is a symlink to... |
 | `/var/lib/clixon/clixon-switch/startup_db` | ...the saved configuration (flash, kept on upgrade) |
@@ -65,15 +65,52 @@ curl -X PUT -H 'Content-Type: application/yang-data+json' -d @snmp.json \
 snmpwalk -v3 -l authPriv -u nms -a SHA -A '...' -x AES -X '...' 192.168.1.1 1.3.6.1.2.1.17
 ```
 
-## Status web page
+## Web page
 
 `clixon_restconf` also serves static files (clixon's `http-data` feature:
 `CLICON_HTTP_DATA_ROOT` and `<enable-http-data>` in `/etc/clixon.xml`), so
-**http://192.168.1.1/** shows a status page on the same origin as
-`/restconf`, which is matched first. The page is plain JavaScript that only
-GETs RESTCONF data; `/system/state` of `clixon-switch` (host name, firmware
+**http://192.168.1.1/** shows a status and settings page on the same origin
+as `/restconf`, which is matched first. The page is plain JavaScript that
+only talks RESTCONF; `/system/state` of `clixon-switch` (host name, firmware
 version from `/etc/os-release`, uptime, load, memory) exists for it. Its
 "Firmware update" button opens the SWUpdate web UI on port 8080.
+
+| File | Content |
+|---|---|
+| `app.js` | `restconf()`, the only place that calls `fetch`; reading and rendering; Save |
+| `settings.js` | the edit dialogs |
+| `sha1.js` | SHA-1 and SNMP key localization |
+
+Each dialog changes **running** in one request, so the plugin validates it
+as one commit and the dialog shows its error message when it refuses.
+"Save configuration" is the copy-config to startup, so a change that cuts
+the page off is undone by a reboot. How a dialog writes:
+
+- Leaf-lists (trunk VLANs, group ports) are replaced with **PUT**; a PATCH
+  merges them, so entries could only ever be added.
+- Changes that must remove and add in the same commit read the subtree with
+  `?content=config`, change it in JavaScript and PUT it back (`modify()`):
+  spanning tree, SNMP (enabling needs a user, removing the last one needs
+  disabling) and the port-based groups (a port moves between two groups).
+- Switching the VLAN mode touches `vlans`, `port-based-vlans`, `switch` and
+  every port, so it is a PUT of the whole datastore (`PUT /restconf/data`
+  with `{"ietf-restconf:data": ...}`, which clixon accepts at the root).
+- SNMP keys are localized in the browser, the same way as
+  clixon-switch-rs's `scripts/snmp-localize-key`, so passphrases never
+  reach the switch. `crypto.subtle` exists only in secure contexts, hence
+  `sha1.js`. The engine ID is the configured one, else
+  `engine-id-in-use`, which the plugin reports only while snmpd runs.
+  Without either, the dialog sets a new `engine-id` (`80:00:1f:88:04` and
+  the host name).
+
+Two clixon habits the page works around: list keys come back as strings
+(`"vlan-id": "1"`, while `config/vlan-id` is `1`), so ids are compared as
+numbers; and an empty list in a PUT is refused (`Mandatory key in 'list
+user'`), so `modify()` drops empty lists and containers first.
+
+The spanning tree state is only fetched while a protocol is enabled:
+reading it runs `mstpctl` a few times per port, which is expensive every
+5 seconds on this CPU. The auto-refresh pauses while a dialog is open.
 
 The page lives in **this** layer, in
 `recipes-webui/ethernet-switch-os-webui/files/www`, not in clixon-switch-rs:
@@ -101,8 +138,9 @@ can proxy. http-data serves GET/HEAD only, does not follow symbolic links,
 and sends anything but html, css, js, svg, ico and fonts as
 `application/octet-stream`.
 
-**No user management yet.** Everyone who reaches the switch can read the
-page, configure over RESTCONF and upload firmware. The intended design:
+**No user management yet.** Everyone who reaches the switch can read and
+change the settings on the page, configure over RESTCONF and upload
+firmware. The intended design:
 
 - RESTCONF: `auth-type user` without `allow-auth-none`, a restconf plugin
   whose `ca_auth` callback checks HTTP Basic credentials (see clixon's

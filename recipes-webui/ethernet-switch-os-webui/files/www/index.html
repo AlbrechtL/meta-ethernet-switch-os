@@ -7,6 +7,8 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='4' width='14' height='8' rx='1.5' fill='%232f6fdf'/%3E%3Cpath d='M4 7h1v2H4zm2.5 0h1v2h-1zM9 7h1v2H9zm2.5 0h1v2h-1z' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
+  <script src="sha1.js" defer></script>
+  <script src="settings.js" defer></script>
 </head>
 <body>
   <header>
@@ -17,15 +19,23 @@
     <nav>
       <span id="status" class="muted"></span>
       <button id="refresh" type="button">Refresh</button>
+      <button id="save" type="button">Save configuration</button>
       <a id="update" class="button" target="_blank" rel="noopener">Firmware update</a>
     </nav>
   </header>
 
   <main>
+    <p id="unsaved" class="notice" hidden>
+      Changes are active but not saved: a reboot undoes them.
+      Use <strong>Save configuration</strong> to keep them.
+    </p>
     <p id="error" class="error" role="alert" hidden></p>
 
     <section class="card">
-      <h2>System</h2>
+      <div class="card-head">
+        <h2>System</h2>
+        <button id="edit-system" type="button" class="small">Edit</button>
+      </div>
       <dl id="system" class="facts"></dl>
     </section>
 
@@ -41,7 +51,7 @@
           <thead>
             <tr>
               <th>Port</th><th>Link</th><th>VLAN</th><th>Description</th>
-              <th class="num">Received</th><th class="num">Sent</th><th>MAC address</th>
+              <th class="num">Received</th><th class="num">Sent</th><th>MAC address</th><th></th>
             </tr>
           </thead>
           <tbody id="ports"></tbody>
@@ -50,7 +60,10 @@
     </section>
 
     <section class="card wide">
-      <h2 id="vlans-title">VLANs</h2>
+      <div class="card-head">
+        <h2 id="vlans-title">VLANs</h2>
+        <span id="vlans-actions" class="actions"></span>
+      </div>
       <div class="scroll">
         <table>
           <thead id="vlans-head"></thead>
@@ -58,10 +71,54 @@
         </table>
       </div>
     </section>
+
+    <section class="card wide">
+      <div class="card-head">
+        <h2>Spanning tree</h2>
+        <button id="edit-stp" type="button" class="small">Edit</button>
+      </div>
+      <dl id="stp" class="facts"></dl>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Port</th><th>Role</th><th>State</th><th>Edge</th>
+              <th class="num">Cost</th><th class="num">Priority</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="stp-ports"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>SNMP</h2>
+        <span id="snmp-actions" class="actions"></span>
+      </div>
+      <dl id="snmp" class="facts"></dl>
+      <table>
+        <thead><tr><th>User</th><th>Security</th><th></th></tr></thead>
+        <tbody id="snmp-users"></tbody>
+      </table>
+    </section>
   </main>
 
+  <dialog id="dialog">
+    <form id="dialog-form">
+      <h2 id="dialog-title"></h2>
+      <div id="dialog-body"></div>
+      <p id="dialog-error" class="error" role="alert" hidden></p>
+      <div class="actions">
+        <button type="button" onclick="this.closest('dialog').close()">Cancel</button>
+        <button id="dialog-apply" type="submit" class="button">Apply</button>
+      </div>
+    </form>
+  </dialog>
+
   <footer class="muted">
-    Read-only view of the switch's RESTCONF data. Configure the switch with
+    Changes take effect at once and are kept across a reboot only once saved.
+    The switch can also be configured with
     <code>ssh cli@<span id="host"></span></code> or RESTCONF.
   </footer>
 </body>
