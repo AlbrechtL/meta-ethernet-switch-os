@@ -35,9 +35,9 @@ software =
 			);
 			files: (
 				{
-					filename = "uImage-@@MACHINE@@.bin";
+					filename = "zImage-@@MACHINE@@.bin";
 					path = "/boot/kernel-a.img";
-					sha256 = "$swupdate_get_sha256(uImage-@@MACHINE@@.bin)";
+					sha256 = "$swupdate_get_sha256(zImage-@@MACHINE@@.bin)";
 				}
 			);
 			/* Applied only after everything above was written. */
@@ -64,9 +64,9 @@ software =
 			);
 			files: (
 				{
-					filename = "uImage-@@MACHINE@@.bin";
+					filename = "zImage-@@MACHINE@@.bin";
 					path = "/boot/kernel-b.img";
-					sha256 = "$swupdate_get_sha256(uImage-@@MACHINE@@.bin)";
+					sha256 = "$swupdate_get_sha256(zImage-@@MACHINE@@.bin)";
 				}
 			);
 			/* Applied only after everything above was written. */

@@ -18,13 +18,13 @@ SRC_URI = "file://sw-description"
 IMAGE_DEPENDS = "rpi-switch-image virtual/kernel"
 
 # The squashfs of rpi-switch-image, and the kernel as deployed by
-# linux-raspberrypi. uImage is what meta-raspberrypi builds with
-# RPI_USE_U_BOOT (KERNEL_IMAGETYPE_UBOOT).
-SWUPDATE_IMAGES = "rpi-switch-image uImage"
+# linux-raspberrypi: a zImage, KERNEL_IMAGETYPE_UBOOT in
+# meta-rpi-managed-switch-bsp's rpi-managed-switch.inc.
+SWUPDATE_IMAGES = "rpi-switch-image zImage"
 SWUPDATE_IMAGES_FSTYPES[rpi-switch-image] = ".rootfs.squashfs-xz"
 SWUPDATE_IMAGES_NOAPPEND_MACHINE[rpi-switch-image] = "0"
-SWUPDATE_IMAGES_FSTYPES[uImage] = ".bin"
-SWUPDATE_IMAGES_NOAPPEND_MACHINE[uImage] = "0"
+SWUPDATE_IMAGES_FSTYPES[zImage] = ".bin"
+SWUPDATE_IMAGES_NOAPPEND_MACHINE[zImage] = "0"
 
 # The .swu is named after IMAGE_NAME; ".rootfs" makes no sense for it.
 IMAGE_NAME_SUFFIX = ""
