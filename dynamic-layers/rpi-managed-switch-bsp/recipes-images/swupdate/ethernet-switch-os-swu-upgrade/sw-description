@@ -1,0 +1,80 @@
+software =
+{
+	version = "@@DISTRO_VERSION@@";
+	description = "Raspberry Pi switch A/B upgrade: the slot that is not running, data partition kept";
+
+	/*
+	 * Revision field of /etc/hwrevision, unique per board, so that a board
+	 * refuses another board's firmware. See ethernet-switch-os-boards.inc.
+	 */
+	hardware-compatibility: [ "@@ETHERNET_SWITCH_OS_HW_COMPAT@@" ];
+
+	/*
+	 * The A/B state is rootpart, upgrade_available and bootcount, which
+	 * boot.scr and rpi-switch-ab-confirm (meta-rpi-managed-switch-bsp)
+	 * evaluate. SWUpdate's own markers would only be more writes to
+	 * uboot.env.
+	 */
+	bootloader_transaction_marker = false;
+	bootloader_state_marker = false;
+
+	ethernet-switch-os = {
+		/* Running from slot B (p3): write slot A (p2). */
+		slot-a = {
+			images: (
+				{
+					filename = "rpi-switch-image-@@MACHINE@@.rootfs.squashfs-xz";
+					type = "raw";
+					device = "/dev/mmcblk0p2";
+					/* Streamed, not staged in /tmp (RAM). A bad hash
+					   leaves only the slot that is not running damaged,
+					   and bootenv below is never reached. */
+					installed-directly = true;
+					sha256 = "$swupdate_get_sha256(rpi-switch-image-@@MACHINE@@.rootfs.squashfs-xz)";
+				}
+			);
+			files: (
+				{
+					filename = "uImage-@@MACHINE@@.bin";
+					path = "/boot/kernel-a.img";
+					sha256 = "$swupdate_get_sha256(uImage-@@MACHINE@@.bin)";
+				}
+			);
+			/* Applied only after everything above was written. */
+			bootenv: (
+				{ name = "rootpart"; value = "2"; },
+				{ name = "upgrade_available"; value = "1"; },
+				{ name = "bootcount"; value = "0"; }
+			);
+		};
+
+		/* Running from slot A (p2): write slot B (p3). */
+		slot-b = {
+			images: (
+				{
+					filename = "rpi-switch-image-@@MACHINE@@.rootfs.squashfs-xz";
+					type = "raw";
+					device = "/dev/mmcblk0p3";
+					/* Streamed, not staged in /tmp (RAM). A bad hash
+					   leaves only the slot that is not running damaged,
+					   and bootenv below is never reached. */
+					installed-directly = true;
+					sha256 = "$swupdate_get_sha256(rpi-switch-image-@@MACHINE@@.rootfs.squashfs-xz)";
+				}
+			);
+			files: (
+				{
+					filename = "uImage-@@MACHINE@@.bin";
+					path = "/boot/kernel-b.img";
+					sha256 = "$swupdate_get_sha256(uImage-@@MACHINE@@.bin)";
+				}
+			);
+			/* Applied only after everything above was written. */
+			bootenv: (
+				{ name = "rootpart"; value = "3"; },
+				{ name = "upgrade_available"; value = "1"; },
+				{ name = "bootcount"; value = "0"; }
+			);
+		};
+	};
+}

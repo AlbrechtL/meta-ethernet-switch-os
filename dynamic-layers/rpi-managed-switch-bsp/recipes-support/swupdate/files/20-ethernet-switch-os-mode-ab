@@ -1,0 +1,31 @@
+# Chooses the SWUpdate software set on the A/B Raspberry Pi switch. Installed
+# as /etc/swupdate/conf.d/20-ethernet-switch-os-mode in place of the RTL83xx
+# version; sourced by /usr/lib/swupdate/swupdate.sh after 10-mongoose-args, so
+# SWUPDATE_WEBSERVER_ARGS is already set.
+#
+# An update always goes to the slot that is not running; boot.scr passes the
+# running one as root=:
+#
+#   root=/dev/mmcblk0p2 (slot A)  ethernet-switch-os,slot-b
+#   root=/dev/mmcblk0p3 (slot B)  ethernet-switch-os,slot-a
+#
+# Nothing the running system is loaded from is written, so unlike the RTL83xx
+# flash system SWUpdate runs in place, not from a copy in RAM.
+
+case " $(cat /proc/cmdline) " in
+    *" root=/dev/mmcblk0p3 "*) target=slot-a ;;
+    *) target=slot-b ;;
+esac
+
+# SWUpdate never reboots on its own: without -p the new slot is only tried
+# at the next manual reboot. The web server calls -p synchronously and only
+# reports the final "Restarting system." once -p has returned, so -p detaches
+# a job and returns. The job leaves time for that message to go out, stops
+# swupdate ($$ is the pid swupdate.sh execs into) so the websocket closes
+# cleanly and the page starts polling, and reboots. Exec'd here rather than
+# left to swupdate.sh, which splits SWUPDATE_ARGS unquoted.
+reboot_job="sleep 2; kill $$; sleep 2; sync; reboot"
+
+exec /usr/bin/swupdate $SWUPDATE_ARGS -e ethernet-switch-os,$target \
+    -w "$SWUPDATE_WEBSERVER_ARGS" \
+    -p "setsid sh -c '$reboot_job' </dev/null >/dev/null 2>&1 &"
