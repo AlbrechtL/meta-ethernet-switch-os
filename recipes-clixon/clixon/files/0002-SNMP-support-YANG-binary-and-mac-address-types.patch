@@ -12,6 +12,8 @@ yang:mac-address for MacAddress, also as table index (dot1dTpFdbTable).
 - binary values are base64 in XML and octets in SNMP.
 - mac-address values are six octets, not their text, and a mac-address
   index is six sub-identifiers without a length (implied: last index).
+
+Upstream-Status: Pending
 ---
  apps/snmp/snmp_lib.c      | 136 +++++++++++++++++++++++++++++++++++++-
  apps/snmp/snmp_lib.h      |   2 +

@@ -19,6 +19,8 @@ Subject: [PATCH 3/4] SNMP: fix tables with augments and index leaves from
   datastore, e.g. an enum name to its number, and use it only for
   configuration. MIBs translated by RFC 6643 are all state data, where a
   missing value does not exist; clixon_snmp returned the default.
+
+Upstream-Status: Pending
 ---
  apps/snmp/snmp_handler.c | 75 +++++++++++++++++++++++++++++++---------
  1 file changed, 58 insertions(+), 17 deletions(-)

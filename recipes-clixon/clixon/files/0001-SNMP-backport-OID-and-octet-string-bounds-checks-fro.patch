@@ -6,6 +6,8 @@ Subject: [PATCH 1/4] SNMP: backport OID and octet string bounds checks from
 
 From clixon commits cf845f56, 61339806 and 6c044431 (apps/snmp only,
 without the xml_body_set changes, which need later libclixon API).
+
+Upstream-Status: Backport [clixon cf845f56, 61339806, 6c044431, apps/snmp only]
 ---
  apps/snmp/snmp_handler.c |  9 +++++
  apps/snmp/snmp_lib.c     | 73 +++++++++++++++++++++++++++++++---------

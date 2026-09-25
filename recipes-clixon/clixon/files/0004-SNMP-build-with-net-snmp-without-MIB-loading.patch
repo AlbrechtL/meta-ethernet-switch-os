@@ -5,6 +5,8 @@ Subject: [PATCH 4/4] SNMP: build with net-snmp without MIB loading
 
 net-snmp configured with --disable-mib-loading has no MIB parser, so
 no tclist to free at exit, and clixon_snmp failed to link.
+
+Upstream-Status: Pending
 ---
  apps/snmp/snmp_lib.c | 2 ++
  1 file changed, 2 insertions(+)
