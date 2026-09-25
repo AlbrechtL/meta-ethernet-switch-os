@@ -8,12 +8,13 @@ IMAGE_INSTALL:append = " packagegroup-ethernet-switch-os-base"
 # fragment's allow-empty-password makes dropbear accept empty passwords (-B).
 IMAGE_FEATURES += "ssh-server-dropbear"
 
-# "ssh cli@192.168.1.1" lands directly in the clixon CLI: clixon_cli is the
-# login shell (clixon-switch adds it to /etc/shells, which dropbear
-# checks) and the clicon group grants access to the backend socket. The empty
-# password is for the proof of concept only.
+# "ssh cli@192.168.1.1" lands directly in the clixon CLI: the login shell is
+# ethernet-switch-os-cli, which prints a joke and execs clixon_cli
+# (ethernet-switch-os-jokes adds it to /etc/shells, which dropbear checks) and
+# the clicon group grants access to the backend socket. The empty password is
+# for the proof of concept only.
 inherit extrausers
-EXTRA_USERS_PARAMS = "useradd -m -d /home/cli -s ${bindir}/clixon_cli -G clicon -p '' cli;"
+EXTRA_USERS_PARAMS = "useradd -m -d /home/cli -s ${bindir}/ethernet-switch-os-cli -G clicon -p '' cli;"
 
 # Board specific packages, from conf/distro/include/ethernet-switch-os-boards.inc.
 IMAGE_INSTALL:append = " ${ETHERNET_SWITCH_OS_BOARD_PACKAGES}"

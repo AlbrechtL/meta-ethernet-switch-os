@@ -1,0 +1,10 @@
+#!/bin/sh
+# Login shell of the cli user: a joke, then the clixon CLI.
+#
+# The joke only comes with an interactive login. "ssh cli@host <command>" makes
+# dropbear run "<shell> -c <command>", which passes through unchanged.
+
+if [ $# -eq 0 ] && [ -t 0 ] && [ -x /usr/bin/ethernet-switch-os-joke ]; then
+    /usr/bin/ethernet-switch-os-joke
+fi
+exec /usr/bin/clixon_cli "$@"

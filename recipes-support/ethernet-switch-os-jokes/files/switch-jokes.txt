@@ -1,0 +1,604 @@
+# Ethernet switch jokes (600) - one joke per line, two parts separated by " | ".
+# Part 1 = setup (first line), part 2 = punchline (second line).
+# Lines starting with # and empty lines are ignored.
+# An optional emoji may end the punchline (removed on non-UTF-8 terminals).
+Why did the switch finally break up with the old hub after all those years? | It wanted a private connection instead of telling everything to everyone. 💕
+A switch walks into a crowded bar and orders a round of drinks. | The bartender only brings them to the one table that actually asked. 🍺
+I told my switch a secret and made it promise not to tell anyone. | It kept its word and forwarded it to exactly one port. 🤫
+In the old days, the hub used to shout every message across the whole room. | The switch just walks over and quietly whispers it to the right person. 👴
+My switch has serious trust issues and a surprisingly good memory. | It remembers the MAC address of every device it has ever met. 🧠
+At the network party, everyone wanted to see the switch dance. | It did the spanning tree shuffle and blocked half the dance floor. 🎉
+Why is the switch always so calm, even on a busy Monday morning? | It has not had a single collision in its entire life. 😌
+The switch is known in the office for never gossiping about anybody. | Well, except for broadcasts. Those go to absolutely everyone. 🤫
+What does a switch say when it meets someone new at a party? | "Nice to meet you. I have already learned your address." 🎉
+The switch studied hard all semester and still failed the final exam. | The teacher said there were far too many CRC errors in its answers. 🎓
+Why did the core switch finally decide to go to therapy? | It had some unresolved loops from its early deployment days. 😵
+My switch is so old that it still has strong opinions about speed. | It insists on negotiating 10 Mbit half duplex, just to be safe.
+Spanning Tree Protocol exists for one simple, very human reason: | Some relationships only work if everyone agrees on who is the root. 💕
+A VLAN is basically one switch pretending to be several switches. | Honestly, that is also how I get through most of my workdays.
+The switch walked into the boss's office and asked for a raise. | Management said: "Sorry, but you are unmanaged." 💸
+Switches are terrible at playing hide and seek with the other devices. | When they cannot find you, they simply flood the whole house. 🌊
+The switch is on a strict diet and counts every single byte. | 1500 bytes per meal on weekdays, jumbo frames on the weekend.
+What do you call a network switch that has no ports at all? | A very expensive and slightly noisy paperweight. 💸
+A broadcast storm in the network is really nothing new for us admins. | It is just the switch version of someone hitting "reply all". 🌀
+My switch keeps blinking at me every time I walk past the rack. | Either it is flirting with me, or there is a loop somewhere. 💕
+Why was port 12 sitting alone in the corner all evening? | It had no link partner and nobody plugged in to talk to it. 😢
+Every switch lives by the same simple motto, day and night: | Store and forward, and never look back.
+Cut-through switching starts forwarding before the frame has fully arrived. | It is for switches that do not read the whole email either.
+The MAC table filled up completely and the switch started flooding. | It was not a failure. It was a midlife crisis, and it became a hub. 😵
+Knock knock. Who is there? Broadcast. Broadcast who? | EVERYONE! EVERYONE ON THE WHOLE SEGMENT!
+The switch has a very specific taste when it comes to music. | It only likes songs that come with a proper 802.1Q tag. 🎵
+A duplex mismatch means both sides talk at the same time. | So basically, it is every meeting I attended this week.
+The switch filed an official complaint with HR this morning. | Apparently port 7 keeps flapping and it is disturbing the others.
+Port security has a very clear job description on the network. | It is the bouncer of the LAN: no MAC on the list, no entry. 👮
+Why did the Ethernet frame suddenly blush in front of everybody? | The switch had just stripped off its VLAN tag. 🔖
+Power over Ethernet was invented for a very special group of devices. | Those that cannot even power themselves in the morning. 🔌
+My switch supports PoE on all 48 ports, which is really impressive. | My coffee machine unfortunately does not. That is the real tragedy. ☕
+A loop walks into a bar. A loop walks into a bar. A loop walks into a bar. | A loop walks into a bar. A loop walks into a bar... (please enable STP) 🍺
+The root bridge election is a very unusual kind of democracy. | It is the only election where the lowest ID always wins. 🌳
+Why is classic Spanning Tree Protocol always so terribly slow? | It thinks for 30 seconds before it dares to forward anything. 🐢
+Rapid Spanning Tree is the same protocol, just a lot faster. | Basically it is STP after its first cup of coffee. ☕
+The switch proudly says it never forgets a face it has seen. | Well, at least not for the next 300 seconds. 🧠
+MAC address aging means entries disappear after a few minutes. | The switch forgets you as quickly as I forget names at parties. 🧠
+What does a switch like to eat for breakfast on a Sunday morning? | Fresh frames, with a small side of preamble. 🍳
+Every Ethernet frame starts with seven bytes of preamble. | That is the switch clearing its throat before it speaks.
+Link up. Link down. Link up. Link down. Link up again. | The cable is clearly just having a really bad day. 🔌
+Among network engineers there is one ancient and very wise proverb: | "Have you tried another port?"
+The switch works on layer 2 and is very proud of that fact. | It does not do IP, and it definitely does not do drama.
+A layer 3 switch is a very ambitious piece of hardware. | It is a switch that secretly dreams of becoming a router.
+The router blamed the switch for the outage in the meeting today. | The switch just shrugged and said: "Not my layer."
+ARP is everyone on the LAN yelling "Who has this address?" | And the switch just keeps passing the question on to everybody. 📢
+When the switch sees an unknown unicast frame, it does not panic. | It just shouts it out of every port and hopes for the best. 📢
+Flooding is the switch's standard answer to a difficult question. | It is the network equivalent of saying "I don't know" very loudly. 🌊
+The switch started with 24 ports, then upgraded to 48 ports. | When that still was not enough, it started stacking.
+Switch stacking is a clever way to put many switches together. | It is basically the network version of bunk beds. 🤝
+Why do admins love LACP so much in their data centers? | Because two cables are always better than one. 🔌
+Link aggregation combines several ports into one strong link. | Teamwork really does make the frame work. 🤝
+Why does the admin carefully label every single cable in the rack? | Because the switch will never tell you where it goes. 🔌
+The patch panel was supposed to bring order into the cabling. | Instead it became the place where cables turn into spaghetti. 🍝
+My cable management in the server rack is so bad by now... | The switch has asked for a restraining order. 🔌
+The switch proudly said to the hub: "I am full duplex." | The hub sighed and said: "I am full of collisions." 💥
+Every creature has its natural habitat in the network world. | The collision domain is where the hub feels most at home. 💥
+Switches ended the era of collisions in Ethernet networks forever. | The hubs are still in mourning to this very day. 😢
+The SFP module is really small, but it has a lot of plans. | Small form factor, but very big ambitions.
+The fiber port once said to the copper port next to it: | "Don't worry, for me this is all light work." 💡
+Why did the switch completely bomb at the comedy night? | Bad timing. Way too much jitter in the delivery. 🎤
+Latency is a very important value in every network. | It is the time between telling a joke and the switch getting it.
+My switch has 48 ports and still does not have a single friend. | Nobody ever plugged anything in. Everything is unplugged. 😢
+What is the favorite fish of every network switch? | The MAC-kerel, of course. 🐟
+An unmanaged switch has a very simple and relaxed approach to life. | No config, no worries, and no clue what is going on.
+A managed switch offers you powerful features and full control. | It also comes with a web interface that was designed in 2004.
+The console cable is a very special item in every IT department. | It is the most borrowed and least returned object in the building. 🔌
+Where did the blue rollover cable go after the last maintenance? | Nobody knows. Nobody ever knows. It is a mystery of IT. 🔌
+The switch still uses the default login admin/admin after five years. | It is a very trusting device and believes in the good in people. 🔐
+The switch rebooted for exactly 90 seconds on a quiet Friday afternoon. | Suddenly everyone in the building urgently needed the network.
+The firmware update is an important moment for every switch. | It is like getting a fresh haircut before a big date. 💕
+"Please do not power cycle the core switch," said the senior admin. | Unfortunately, that sentence was spoken just after someone did. 💥
+VLAN 1 is the party that everyone is automatically invited to. | And it is also the party that nobody should really attend. 🎉
+The native VLAN is where the switch feels safe and relaxed. | It is its untagged comfort zone. 🔖
+The trunk port has a heavy job on every network switch. | It has to carry everybody else's baggage all day long.
+The access port knows exactly one VLAN and nothing else. | And honestly, it is very proud of that.
+Why did the VLAN suddenly feel so isolated from all the others? | Well, to be fair, that was the whole point of creating it.
+Private VLANs are a feature for very special kinds of ports. | Those that do not want to talk to their neighbors at all.
+The switch knows exactly which device is behind every single port. | That is professional-grade stalking, but it is in the RFC.
+IGMP snooping is a feature that every switch should support. | It is the only kind of snooping that is actually acceptable.
+Multicast is a clever way to send data to a group of receivers. | It is basically the switch posting in the family group chat.
+Why do some admins enable jumbo frames on their storage network? | Because sometimes 1500 bytes are just not enough.
+An MTU mismatch can cause very strange network problems. | It proves that size really does matter after all.
+The backplane is where all the traffic inside the switch meets. | It is where the real traffic jams happen at rush hour. 🚦
+The vendor promised a completely non-blocking switch this time. | Finally something in IT without bottlenecks. Allegedly.
+The switch in the server room is small and not very powerful. | But its fan is still louder than the entire office.
+The switch runs 24/7, has never taken a single day of vacation. | It also has no union. Someone should really look into that. 🌴
+The switch in the basement has an uptime of 1337 days. | Nobody dares to touch it, and nobody remembers the password. 🔐
+1U switches live in very small spaces inside the rack. | They have been living in cramped apartments since forever.
+A green LED on the switch is a calm and steady heartbeat. | An amber LED is the admin's heart attack. 😱
+Auto-negotiation is when two devices agree on speed and duplex. | Two things agreeing on something. Rare and beautiful. 🤝
+10/100/1000 is printed right on the front of my switch. | It is also my patience before, during and after an outage. 🐢
+Why do switches love Ethernet more than any other technology? | Because it frames everything so nicely.
+The CAM table is the most important memory in the whole switch. | It is basically the switch's contact list.
+A MAC flooding attack fills the switch table with fake addresses. | It is like overwhelming someone with thousands of fake friends. 🌊
+BPDU guard is a strict protection feature on access ports. | It slams the door when a stranger claims to be the root.
+Root guard makes sure the root bridge stays where it belongs. | It is the switch's polite way of saying "I am the boss here." 🌳
+Loop detected. Port disabled. Network stable again. Problem solved. | The users on that port are still unhappy, though. 🔁
+There are exactly 10 kinds of ports on every switch in the world. | Those that are up, and those that are down.
+Welcome back to your shell. The switch forwarded you right here. | Please log out responsibly and do not create any loops. 🔁
+The network cable was feeling tense after a long day in the rack. | It had been twisted in pairs since the day it was made. 🔌
+Why did the Cat5 cable feel old next to all the new cables? | Everyone kept calling it "legacy" behind its back. 🔌
+The Cat6 cable went to the gym every day for a whole year. | Now it can finally handle 10 gigabits over short distances. 🔌
+The RJ45 plug broke its little plastic clip during installation. | Now it hangs loosely in the port and hopes for the best. 🔌
+What do you call an RJ45 plug without the little locking clip? | A temporary connection with permanent consequences. 🔌
+Why do network cables always get tangled in the storage box? | They spend all night practicing their spanning tree. 🌳
+The crimping tool is the most feared instrument in the lab. | One wrong squeeze and eight little wires lose all hope. 🔌
+I crimped my first network cable with great care and patience. | It worked perfectly, just with the pairs in the wrong order.
+T568A and T568B are the two standards for wiring a plug. | Mixing them is how you accidentally invent a crossover cable. 🔌
+The crossover cable feels forgotten in the age of auto MDI-X. | It still tells young cables stories about the old days. 👴
+Auto MDI-X was a big relief for everyone in networking. | Suddenly nobody needed to know which cable was which. 🔌
+The patch cable was only 30 centimeters long, but it was fine. | It never wanted to go far. It just wanted to connect. 🔌
+The 100 meter limit of copper Ethernet is taken very seriously. | At 101 meters, the cable starts having an existential crisis. 😵
+The new intern ran one network cable across the whole building. | It was 140 meters long, and the packets arrived very emotional. 🔌
+Why was the shielded cable so calm during the thunderstorm? | It knew how to handle interference from the outside world. 🌀
+The unshielded cable lay right next to the power line all year. | It picked up so much noise that it started hearing voices. 🔌
+The cable tester showed a green light on all eight wires. | Only then did the admin dare to believe in happiness again. 🔌
+The cable tester showed a red light on wire number 3. | Pair two was clearly having a very personal problem. 🔌
+The cable was plugged in, but the link light still stayed dark. | The other end was lying on the floor, relaxing. 🔌
+Somebody used a cable tie so tight it deformed the network cable. | The packets now arrive a little bit squeezed and angry. 🔌
+Velcro straps are the kind and gentle way to bundle cables. | Cable ties are for people who never plan to change anything. 🔌
+The flat network cable looked stylish under the carpet. | Everybody kept stepping on it, and it took it personally. 🔌
+The office dog discovered that network cables are chewable. | The outage report now lists "dog" as the root cause. 🐶
+My cat sleeps on the switch because it is warm and it blinks. | She is technically the most reliable monitoring we have. 🐱
+The vacuum cleaner in the office has a very special talent. | It finds and unplugs the one cable that matters most. 🧹
+The cleaning crew needed a power socket for their machine. | They unplugged the core switch. It was the nearest one. 🧹
+Why is the patch cable always exactly 10 centimeters too short? | Because the long one is in someone's desk drawer at home. 🔌
+The admin bought patch cables in every color of the rainbow. | Nobody ever agreed on what any of the colors meant. 🌈
+Blue for data, yellow for uplinks, red for the important stuff. | And pink is from the time we ran out of blue cables. 🔌
+The cable came in a neatly wound coil straight from the factory. | It was never able to lie flat again for the rest of its life. 🔌
+Somebody labeled the cable at both ends with the same label. | It said "cable". Very helpful, thank you. 🔌
+The cable label said "DO NOT UNPLUG" in big red letters. | So naturally, it was the first cable that got unplugged. 🔌
+The network socket in the wall had been painted over twice. | The link is still up. Nobody knows how. Nobody asks.
+The floor box in the meeting room had no cable in it anymore. | Just dust, a paper clip and the ghost of a 2009 network. 👻
+The wall port in the office was labeled "3-17-B". | No document in the entire company mentions "3-17-B".
+The electrician installed network sockets in the new building. | Every single one of them is connected to absolutely nothing.
+The toner and probe set is used to trace unknown cables. | It is basically a metal detector for lost connections. 🔌
+I traced an unknown cable through the ceiling for two hours. | It ended at a switch that has been powered off since 2015. 🔌
+There is a cable in our server room that nobody can identify. | We call it "the legacy cable", and we do not touch it. 🔌
+Why did the fiber cable refuse to go to the party with copper? | It said the copper cables were far too electric for its taste. 🎉
+The fiber cable was bent a bit too far around the rack corner. | Now the light inside has to take a very dramatic detour. 💡
+Never look directly into the end of a fiber cable, they say. | That is the network's way of saying "stop staring at me." 💡
+The fiber connector was dirty and the link kept dropping. | One tiny speck of dust took down the whole storage network. 💡
+Fiber cleaning sticks are the toothbrushes of the data center. | Nobody likes using them, but everyone should. 💡
+LC, SC, ST, MPO... fiber connectors come in many shapes. | And you always have exactly the wrong one in your hand. 💡
+Single mode and multi mode fiber look almost exactly the same. | The link light knows the difference, though. Very well. 💡
+The DAC cable is a copper cable pretending to be fiber optics. | It is cheap, short, and very confident about it. 💡
+Why did the old coax cable feel so bad at the network reunion? | Nobody needed a terminator anymore to keep things working. 🔌
+10BASE2 networks needed terminators on both ends of the cable. | Somehow the network always said: "I'll be back." 🔌
+Token Ring asked Ethernet how it won the war all those years ago. | Ethernet said: "I just talked whenever I wanted to."
+Token Ring had a very polite and orderly way to communicate. | Only the one holding the token was allowed to speak.
+Ethernet started as a shared medium where everyone talked at once. | Honestly, the internet still works that way sometimes.
+CSMA/CD is the rule that once kept Ethernet from total chaos. | Listen first, then talk, and apologize if you collide.
+Why is CSMA/CD like dinner with my family on Sundays? | Everyone talks at once, backs off, and tries again later.
+Exponential backoff was a very clever idea in early Ethernet. | Wait a random time, then try again. Like asking for a raise. 💸
+Ethernet was named after the luminiferous ether of old physics. | Physics disproved the ether, but the name stayed. Classic IT.
+Ethernet is over 50 years old and still going strong. | It has outlived most of the technologies that mocked it.
+The very first Ethernet ran at about 3 megabits per second. | Today that is not enough to load a cookie banner.
+400 Gigabit Ethernet is already running in data centers. | The printer on the second floor still negotiates 100 Mbit. 📄
+The office printer is connected to a gigabit switch port. | It still takes four minutes to print one page. Priorities. 📄
+Why does the printer always get its own dedicated VLAN? | So it cannot infect the rest of the network with its mood. 📄
+The printer lost its IP address again on Monday morning. | The switch saw it leave, but it never said goodbye. 👋
+The VoIP phone gets power and data over one single cable. | It is the most efficient employee in the entire building. 📞
+Every desk phone in the office is powered by the switch. | When the switch reboots, the whole office is finally quiet. 📞
+The access point is mounted on the ceiling and powered by PoE. | It is the only device that gets to look down on the switch. 🔌
+The switch had a very tight PoE budget for the whole month. | The new camera was denied power, just like my expense report. 💸
+PoE+, PoE++, UPoE... the power standards keep on growing. | Soon the switch will power the whole building and the coffee. ☕
+Someone plugged a PoE device into a non-PoE switch port. | Nothing happened. Which was, surprisingly, the correct result. 🔌
+The IP camera in the parking lot stopped working after the rain. | The switch was fine. The camera was just not waterproof. 📷
+The switch gives PoE to the camera watching the server room. | Now the camera sees everything, including who unplugged it. 🔌
+The access point asked the switch for a little bit more power. | The switch said: "Budget is tight. Please try 802.3at." 💸
+The wireless team always says that wireless is the future. | All their access points are connected with cables, though. 📶
+Why does wireless never truly replace the switch in the office? | Because every access point needs a wire to feel secure. 📶
+The user said the network is slow and the internet is broken. | He was on the guest Wi-Fi in the basement, behind two walls. 📶
+The user plugged both ends of one cable into the same switch. | The switch saw itself in the mirror and panicked. 😱
+A user brought a small home switch from the supermarket to work. | It created a loop, and a legend was born that day. 🔁
+The small desk switch under the table has no name and no config. | It is the most dangerous device in the whole building.
+Nobody knows who installed the unmanaged switch in the ceiling. | It has been forwarding frames quietly for twelve years.
+We found a switch hidden behind a filing cabinet in accounting. | It had better uptime than our entire data center.
+The five port switch at home thinks it is an enterprise switch. | It has one VLAN, no config, and a lot of self-confidence.
+My home network has more switches than people living in the house. | My family says it is a problem. The switches disagree. 🏠
+Why do home lab owners always have a rack in the basement? | Because the living room already rejected the fan noise. 🏠
+My partner asked why the basement is suddenly so warm. | I said the 48 port switch is just a very fancy heater. 🥵
+The electricity bill doubled after I set up my home lab. | But now my smart light bulbs have their own VLAN. 🔋
+My fridge, TV and doorbell are all on the IoT VLAN at home. | They may not talk to the laptops. For very good reasons. 🏠
+The smart toaster tried to access the file server at night. | The switch ACL said no, and the toaster is now under watch. 🏠
+The smart light bulb was sending 500 packets per second. | Even the switch had to ask: "What are you doing, buddy?" 🏠
+Why does the IoT VLAN have the strictest rules in the network? | Because the toaster has not had a security update since 2019. 🏠
+The gaming console asked the switch for really low latency. | The switch said: "Sorry, your brother is streaming in 4K."
+My kids asked why the internet is so slow in their bedroom. | I said the switch knows what time it is. It is bedtime. 😴
+Parental control on the home switch is a very powerful feature. | One shutdown command and the house is suddenly very quiet.
+My teenager discovered how to reset the switch at home. | Now he also knows how to configure one. I created a monster. 👾
+The neighbor's Wi-Fi is stronger in my kitchen than my own. | My switch has taken this very personally. 📶
+The powerline adapter promises network over the power cables. | The switch has never once trusted it since. 🔌
+The powerline adapter only works when the washing machine is off. | The switch finds this relationship deeply unstable. 💕
+The switch was placed directly on top of the warm router. | They now share a very close and very hot relationship. 🥵
+My home switch has blue LEDs that light up the whole bedroom. | It is now a night light that also does some networking. 😴
+I put black tape over all the switch LEDs in my bedroom. | Now I only hear the fan, and I can't see if anything works. 🚨
+The cheap switch from the online store came with a manual. | It was one page long, and three of the words were English.
+Why did the cable refuse to go into the new patch panel? | It had a bad experience with commitment in the old one. 🔌
+LLDP lets switches tell their neighbors who they are. | It is basically a social network for network devices.
+The switch sends out LLDP packets every thirty seconds. | Nobody replies, but it keeps saying hello anyway. 👋
+Why did the switch sign up for LLDP in the first place? | It wanted its neighbors to finally know its name.
+QoS decides which traffic is more important than the rest. | Voice goes first, video second, and your backup waits forever. 💾
+The switch put the CEO's video call in the highest QoS queue. | The rest of the company went into the "best effort" queue.
+Best effort is a traffic class on every switch in the world. | It is also how I describe my work on Friday afternoons.
+DSCP marking is how packets tell the switch how important they are. | Every single app on the network marks itself as "urgent".
+The switch reads the priority bits of every VLAN tag it sees. | It is the only one in the company that respects priorities. 🔖
+Traffic shaping makes sure that bursts are smoothed over time. | It is like a diet plan for a very hungry network.
+Policing drops all the traffic that goes above the allowed rate. | The switch does not negotiate. The switch just drops. 📉
+Tail drop happens when the queue on the switch is full. | The last packets in line never get in. Like concert tickets. 📉
+The switch buffer was too small for the sudden traffic burst. | Microbursts: tiny events that ruin entire weekends.
+Why do network engineers fear microbursts so much? | You cannot see them, but you can feel them in your packet loss. 😱
+Head of line blocking is a real problem in cheap switches. | One slow packet in front ruins everything. Like the supermarket. 🐢
+Storm control limits broadcast traffic on each switch port. | It is the switch equivalent of an umbrella. 🌀
+The admin enabled storm control on every single access port. | The next broadcast storm was only a light drizzle. 🌀
+DHCP snooping protects the network against rogue DHCP servers. | The switch checks who is really allowed to hand out IPs.
+A user brought his own home router and plugged it into the LAN. | DHCP snooping stopped it before the user could say "oops".
+The rogue DHCP server gave half the office the wrong gateway. | Everyone's internet suddenly went through a router under a desk.
+Dynamic ARP inspection checks every ARP reply on the switch. | Finally someone in the network who actually verifies claims.
+IP source guard is a very strict feature on access ports. | Only the IP from DHCP is allowed. No creative addresses.
+802.1X makes every device prove who it is before it gets network. | It is the passport control of the office network. 👮
+The laptop failed 802.1X authentication for the third time today. | The switch put it into the guest VLAN, like a waiting room.
+MAC authentication bypass is for devices that cannot do 802.1X. | Printers, cameras, and that one coffee machine with Ethernet. ☕
+The RADIUS server went down during the morning login peak. | Suddenly the switches did not trust anyone anymore.
+Port mirroring copies all the traffic of one port to another. | It is the switch equivalent of reading someone's diary. 🤫
+SPAN sessions are very helpful when troubleshooting problems. | Also great for finding out who watches videos all day.
+The admin connected Wireshark to the mirror port on the switch. | Three hours later he knew more about the office than HR.
+RSPAN sends mirrored traffic across the network to a far port. | It is long-distance eavesdropping, but fully documented.
+The network TAP is a passive device that copies all traffic. | It sees everything and says nothing. The perfect colleague.
+SNMP lets you monitor all your switches from a central system. | The "S" stands for "simple", which is a lie.
+The community string on the switch is still set to "public". | The whole internet is now part of our community.
+SNMPv3 finally added proper security to the protocol. | Nobody configured it, because v2c was already working.
+The monitoring system polls the switch every five minutes. | The switch always says "fine", even when it is not.
+The switch sent an SNMP trap at three o'clock in the morning. | The on-call admin has not forgiven it to this day. ⏰
+The syslog messages from the switch fill up the log server daily. | 99 percent of them say that a port went up or down.
+The switch logs every single event with a precise timestamp. | The time is off by six years, because NTP was never set up.
+NTP is important for all network devices in the data center. | Without it, every switch lives in its own time zone.
+Why was the switch always late to the monitoring meeting? | It had no NTP server and thought it was still 1993. 👴
+NetFlow tells you who talks to whom and how much on the network. | It is the itemized phone bill of the data center. 📞
+sFlow only samples one packet out of thousands for analysis. | It is like judging a movie by watching every 1000th frame. 🎬
+The switch now supports streaming telemetry to modern tools. | It can complain in real time instead of every five minutes.
+Spanning tree blocks some ports to prevent loops in the network. | It is the only protocol whose job is to disable things. 🔁
+The blocked port in spanning tree just sits there and waits. | Always ready, never used. Like the fire extinguisher. 🧯
+The designated port and the root port had a long discussion. | The blocked port was not allowed to say anything at all.
+The switch sent a topology change notification to everyone. | Now all switches flush their tables and start from scratch.
+The spanning tree topology changes every few minutes here. | Somebody's laptop dock keeps going up and down all day. 🌳
+PortFast skips the long waiting time of spanning tree. | Use it on edge ports only, or learn about loops the hard way. 🔁
+The admin enabled PortFast on the uplink to the core switch. | The network went down faster than the port came up. 🚀
+MSTP groups many VLANs into a few spanning tree instances. | It is spanning tree, but with a spreadsheet. 📊
+Per-VLAN spanning tree runs a separate instance for every VLAN. | With 400 VLANs, the switch CPU is doing yoga to relax. 🧘
+The root bridge was accidentally a small switch in a meeting room. | All traffic took a detour through the conference table. 🌳
+The switch with the lowest MAC address became the root bridge. | It was the oldest and weakest switch in the whole building. 🌳
+Always set the bridge priority on your core switches manually. | Otherwise a 15 year old switch will run your network.
+The network team finally replaced spanning tree with a fabric. | Now nothing is blocked, and nobody understands anything. 🌳
+TRILL, SPB, VXLAN, EVPN... so many ideas to replace STP. | And spanning tree is still running in most networks today. 🌳
+VXLAN stretches layer 2 networks across layer 3 infrastructure. | A VLAN went abroad and came back with 16 million friends.
+VLAN IDs only go up to 4094, which seemed like a lot at the time. | Then cloud computing arrived and laughed about that number. ⛅
+The VLAN numbering in our company follows a very clever system. | Nobody remembers what it is, but it was clever once. 🧠
+VLAN 42 is used for the management network in our company. | Because it is the answer to everything, including SSH.
+VLAN 666 was chosen for the guest network by the old admin. | Nobody changed it. The guests seem fine with it.
+VLAN 999 is the black hole VLAN for unused switch ports. | Frames go in, and nothing ever comes out again.
+Unused switch ports should always be shut down for security. | Our admin shut down every port. The network was very secure.
+The voice VLAN and the data VLAN share one port on the desk. | The phone and the PC are roommates with separate fridges. 📞
+Q-in-Q puts one VLAN tag inside another VLAN tag. | It is VLAN inception. Frames within frames within frames. 🔖
+The frame had so many VLAN tags that it looked like a tourist. | Every country it passed gave it another sticker. 🔖
+The switch removed the outer VLAN tag at the provider edge. | The frame felt lighter and ready for a new life. 🔖
+Double tagging attacks try to jump from one VLAN into another. | That is VLAN hopping, and the switch is not amused. 🔖
+Why did the frame try VLAN hopping in the middle of the night? | It wanted to see if the grass was greener on the other VLAN.
+The trunk allowed all VLANs by default, as trunks usually do. | Now every VLAN visits every switch, just to say hello. 👋
+The admin pruned the VLANs on all trunk ports on Friday. | By Monday, half the printers were missing. Pruned too hard. 📄
+VTP was supposed to make VLAN management much easier. | Until one switch with a higher revision deleted all VLANs.
+A lab switch with a high VTP revision was added to production. | Every VLAN in the company disappeared in about 3 seconds.
+The switch says VTP transparent mode is its preferred lifestyle. | It hears everything, but decides for itself.
+GVRP and MVRP were meant to register VLANs automatically. | Nobody trusted them enough to try it in production.
+The switch has an ACL that blocks traffic between two VLANs. | It is a very strict neighbor with a very tall fence.
+The ACL on the switch has 500 lines and nobody knows why. | Line 327 says "permit any any". That explains a lot.
+The implicit deny at the end of every ACL is invisible. | You never see it, but you always feel it.
+The admin added one line to the ACL on Friday afternoon. | He forgot the permit statement. Weekend over.
+Private VLANs have isolated, community and promiscuous ports. | The last word always gets a laugh in the training class. 🎓
+The promiscuous port in the private VLAN talks to everyone. | The isolated ports are not allowed to judge it.
+IPv6 link-local addresses always start with fe80. | The switch does not care. It forwards them anyway.
+The switch saw its first IPv6 packet after years of IPv4. | It did not panic. It is layer 2. It forwards everything.
+IPv6 has been "coming soon" for more than 25 years now. | The switch has seen many trends, and it is still waiting too.
+Multicast Listener Discovery is IGMP for IPv6 networks. | Same idea, new name, bigger addresses. Classic networking.
+PIM is the routing protocol for multicast traffic. | Whenever it breaks, everyone blames the switch first anyway.
+A multicast storm flooded the video surveillance VLAN. | For once, the cameras only saw their own traffic. 🌀
+The IGMP querier was missing in the VLAN for several weeks. | The switch forgot who wanted multicast and gave it to all.
+Flow control sends pause frames when the receiver is overloaded. | It is the switch saying: "Wait, I need a moment."
+Pause frames spread through the whole network like a bad mood. | One slow server can make the entire data center slow down. 🐢
+Priority flow control only pauses one class of traffic at a time. | It is a more polite way to say "please stop talking".
+Energy Efficient Ethernet puts idle links into low power mode. | Unfortunately, some devices never wake up from their nap. 😴
+The switch saves power at night when nobody is working. | It is the only thing in the office that actually sleeps well. 😴
+Green Ethernet reduces the power on short cables automatically. | The switch measures the cable and decides: "less effort". 🔌
+The switch detected that the cable is only two meters long. | It lowered the power and now feels very eco-friendly. 🔌
+UDLD detects links where traffic only goes in one direction. | It is the switch detecting a one-sided relationship. 💕
+A unidirectional link can create loops even with spanning tree. | Because one side talks and the other side never listens. 🔁
+Link debouncing ignores very short link flaps on a port. | The switch says: "Let's see if this is serious first."
+Err-disabled is the port state after the switch loses patience. | Only a human can bring it back, with shut and no shut. 🐢
+Link aggregation groups need the same settings on every member. | One port with a different speed, and the whole team falls apart.
+The admin typed "reload" in the wrong SSH window. | That is how he found out which switch was the core. 💥
+The switch asked: "Proceed with reload? [confirm]" | The admin pressed Enter out of pure habit. Farewell. 👋
+"Reload in 10" is the best safety net for remote changes. | If you lock yourself out, the switch comes back on its own. 💥
+The admin forgot to cancel the scheduled reload after his change. | The change was perfect. The reload ten minutes later was not. 💥
+"Write memory" is the most important command on any switch. | Forget it once, and the next power outage teaches you why. 🔋
+The switch lost all its changes in the power outage last night. | Running config and startup config were never introduced. 🔋
+"Copy run start" is a sacred ritual in every network team. | Many have forgotten it. Few have forgotten it twice. 💾
+The running config and the startup config were not in sync. | The switch had a secret double life for three whole years. 🤫
+"Show running-config" prints 4000 lines onto the terminal. | And the line you need is always right at the very end.
+The admin typed "show run" and piped it through "include". | That one pipe symbol saved him half an hour of scrolling.
+Tab completion on the switch CLI is a wonderful feature. | Until two commands start with the same letters.
+The question mark is the most used key on every switch CLI. | Nobody remembers the syntax. Everybody just asks the switch. 🧠
+"Invalid input detected at '^' marker", said the switch. | The little arrow points at your mistake like a strict teacher. 🎓
+"% Ambiguous command" is the switch's way of saying one thing: | "I know what you mean, but I will not help you."
+The admin typed "conf t" in the wrong terminal window again. | His own laptop's bash shell was not impressed.
+"Do" in front of a show command works in config mode. | It is the most polite little word in the whole CLI.
+The switch config has comments from an admin who left in 2014. | They say "temporary fix, remove later". It is still there.
+The interface description says "Uplink to core - DO NOT TOUCH". | It is connected to a printer on the third floor. 📄
+The switch hostname is still "Switch" after five years. | There are 47 switches called "Switch" in the building.
+Why do network engineers name their switches after planets? | Because "sw-bldg2-fl3-rack4-a" did not fit on the label.
+Our core switches are named after Greek gods like Zeus and Hera. | The access switches are named after their confused followers.
+The switch banner warns: "Unauthorized access is prohibited." | The only people who read it are the authorized admins.
+The message of the day on the switch is from 2011. | It announces a maintenance window that ended long ago.
+The enable password of the switch is written on a sticky note. | The sticky note is stuck to the front of the switch. 🔐
+The switch password was set by an admin who left the company. | Password recovery is now the new team building activity. 🔐
+Password recovery on a switch requires physical console access. | And a lot of patience, a paper clip and some quiet prayers. 😱
+Why is the enable secret always so secret on older switches? | Because nobody wrote it down, and nobody remembers it. 🤫
+Telnet was still enabled on the switch in the year 2026. | The switch said: "It works. Why should I change?"
+SSH replaced Telnet on switches many years ago, in theory. | The old switch in the basement never heard about it.
+The admin connected to the switch using the serial console. | 9600 baud: the speed of patience and meditation. 🧘
+The USB to serial adapter needs a driver to work properly. | The driver needs internet, and the internet needs the switch.
+The switch was configured with a baud rate of 115200. | The admin tried 9600 for an hour and saw only strange symbols.
+Garbled characters on the console mean the baud rate is wrong. | Or the switch is trying to speak in ancient runes.
+The laptop had no serial port, and the adapter was lost. | The admin configured the switch with hope and imagination.
+The switch CLI has a command to show the uptime and version. | Nobody uses it, except to brag about uptime to colleagues.
+"Show interface status" is where every troubleshooting starts. | And "notconnect" is where most of the conversations end.
+The interface counters showed millions of input errors. | The cable had been lying under a chair wheel for months. 🔌
+"Clear counters" is a very satisfying command to run. | All the problems disappear, at least from the screen.
+The admin cleared the counters before starting to troubleshoot. | Now nobody knows what happened before. Very professional.
+The switch interface shows "up/down" instead of "up/up". | The cable is there, but the relationship is not working. 💕
+"Administratively down" means a human shut the port on purpose. | The switch says: "Don't look at me. It was them."
+The port was shut down with "shutdown" by a careful admin. | Then "no shutdown" by a less careful admin one hour later.
+The switch has 48 ports and 48 identical blocks of configuration. | The admin learned about "interface range" one week too late.
+"Interface range" allows configuring many ports at once. | It also breaks many ports at once. Very efficient.
+The admin configured a trunk port instead of an access port. | The user's laptop now sees 40 VLANs and is very confused.
+Why did the switch reject the admin's new configuration? | It had a syntax error, and the switch has self-respect.
+Configuration management keeps backups of every switch config. | We have backups of everything, except the switch that died. 💾
+The config backup ran every night for three years without error. | Every backup was empty, because the password had changed. 🔐
+The config diff showed only one changed line after the outage. | "spanning-tree portfast trunk". Of course it was that one. 🌳
+Ansible now configures all of our switches automatically. | Now we can break 200 switches at once instead of just one. 🤖
+The automation script pushed the new VLAN to all switches. | It also removed all the old VLANs. That was a small bug. 🐛
+The network automation engineer has no fear anymore. | He tested everything in production. With the whole company. 😱
+Infrastructure as code means the switch config lives in Git. | Now we have version history for every bad decision we made. 🔀
+The pull request for the switch change had 15 approvals. | Nobody actually read it, but everyone trusted each other. 🔀
+The CI pipeline tested the switch config in a virtual lab. | The virtual lab worked. The real switch had other ideas.
+The switch API returned an error 500 for the new request. | Even the switch's web server needs a day off sometimes.
+The REST API on the switch is modern and easy to use. | Everyone still uses the CLI and screen scraping.
+NETCONF and YANG make switch configuration more structured. | The XML output is long enough to count as a novel. 📚
+The switch's web interface only works in very old browsers. | The admin keeps an ancient laptop just for that purpose.
+The web GUI of the switch needs a Java plugin to run. | The admin keeps a virtual machine from 2008 just for this.
+Why do admins prefer the CLI over the switch's web interface? | Because the web GUI times out after every third click.
+The switch web interface has a save button in a hidden corner. | Nobody ever found it. Every change was lost after a reboot. 💥
+The new cloud-managed switch only works with internet access. | You need the network to configure the network. Very clever. ⛅
+The cloud controller was down for maintenance on Monday. | The switches kept working, but nobody could see them. ⛅
+The license for the switch features expired over the weekend. | Suddenly the switch forgot how to do layer 3 routing. 💸
+Why was the new switch so much cheaper than expected? | Every single feature is a separate license. Even the ports. 💸
+The switch has 48 ports, but only 24 of them are licensed. | The other 24 are just decoration with blinking lights. 💸
+The vendor released a new switch firmware version today. | The release notes say "bug fixes" and nothing else. 📝
+The firmware upgrade on the switch took only ten minutes. | The troubleshooting afterwards took two whole days.
+The admin read all release notes before the firmware update. | Just kidding. Nobody reads the release notes. 📝
+The switch firmware has a known bug in the current version. | The fix is in the next version, which has two new bugs. 🐛
+The firmware file was 400 MB, and the flash had 300 MB free. | The admin deleted an old image from 2016 with shaking hands. 😱
+The switch booted the backup image after the failed update. | It was like waking up in a hotel room from ten years ago. 💾
+The ROMMON prompt appeared after the firmware upgrade failed. | That is when the admin started to question his career. 💥
+The boot variable of the switch pointed to a missing file. | The switch spent the whole night looking for itself.
+The change window for the switch upgrade starts at midnight. | Coffee, pizza, and the quiet fear of the reboot countdown. ☕
+The maintenance window was planned for exactly two hours. | The rollback plan was one sentence: "It will work."
+The change advisory board approved the switch reboot. | Nobody told the night shift in the warehouse, though. 💥
+The emergency change was done without any approval at 3 AM. | Now there is a meeting about the meeting process. ⏰
+The network diagram in the wiki was last updated in 2017. | The network has changed completely. The diagram has not. 📝
+The network documentation just says "see Bob for details". | Bob retired to a farm and does not answer emails anymore. 🌴
+Our network documentation is very complete and up to date. | It lives exclusively in the head of one very tired admin. 📝
+The network map has lines crossing each other everywhere. | It looks less like a network and more like modern art. 🎨
+The switch port list is maintained in an Excel spreadsheet. | It has 14 tabs, 3 colors, and zero correct entries. 📊
+The IP address management is also an Excel spreadsheet. | The file is locked because someone opened it in 2022. 📊
+Why does the network team keep so many spreadsheets? | Because the proper IPAM tool was never finished. 📊
+The helpdesk ticket said: "The internet is broken." | The switch disagrees and has the counters to prove it.
+The user says the network is slow every day at exactly 9 AM. | That is when 500 laptops start their updates at once. 🐢
+"It worked yesterday" is what every user says to the admin. | The switch says the same, and it has logs to prove it.
+The user moved his desk to the other side of the office. | His laptop is now in the wrong VLAN and very disappointed.
+The user asked if the switch can make the Wi-Fi faster. | The switch has no idea what Wi-Fi is. It only knows cables. 📶
+The manager asked why we need a new switch every seven years. | The old one is so slow, the fax machine overtakes it. 🐢
+The budget for new switches was cut again this year. | The old switches are now officially part of the museum tour. 💸
+The finance department asked what a switch actually does. | "It makes the lights blink." The budget was approved. 💸
+The CEO asked why the network is always the problem. | The team replied: "It's always DNS." Everyone agreed. 🌐
+It's not DNS. There is no way it's DNS. | It was DNS. The switch was innocent all along. 🌐
+The switch is always blamed first when anything is slow. | It is the scapegoat of the data center. It is used to it. 🐢
+The application team says the network has packet loss. | The switch shows zero drops. The app has a memory leak. 📉
+The developer asked for "just a quick firewall rule" on the switch. | The switch sighed. It is not a firewall. It never was.
+"Can you ping it?" is the first question in every support call. | The switch has been able to ping it all along.
+The data center has cold aisles and hot aisles for cooling. | The switch was installed backwards and breathes hot air. 🥵
+Switch airflow can go front to back or back to front. | Choosing the wrong one turns the rack into a pizza oven. 🍕
+The switch fans run at full speed during the summer heat. | You can hear the data center from the parking lot. 🥵
+One of the two power supplies in the switch has failed. | The switch is fine, but it sends worried alerts every minute. 🔋
+Redundant power supplies are important in every data center. | Unless both are plugged into the same power strip. 🔋
+The UPS kept the switch running during the power failure. | For exactly four minutes. The generator needed five. 🔋
+The generator test was scheduled for Saturday morning. | Nobody told the switches. They were very surprised. 🔋
+The switch has a temperature sensor that reports every minute. | It is 45 degrees, and the switch is not happy about it. 🥵
+The air conditioning in the server room failed on Friday night. | By Monday, the switches were cooking breakfast. 🍳
+The switch shut itself down because it was too hot. | The only one in the company with a healthy work-life balance. 🥵
+Why do switches never get cold in the winter? | Because they have their own built-in fan heater. 🥵
+The fan tray in the switch can be replaced during operation. | The admin tried. The switch was very loud about it.
+The switch was mounted in the rack with only two screws. | It hangs a little bit crooked, but it forwards straight.
+The rack rails for the switch were missing from the box. | The switch now lives on top of a server, like on a shelf.
+Cage nuts are the most painful part of installing a switch. | Every admin has a scar from a cage nut on one finger.
+The rack unit numbers are printed on the side of every rack. | Nobody ever looks at them. Everyone counts the holes.
+The switch was installed exactly one rack unit too high. | The patch cables are now stretched like guitar strings. 🎸
+The top of rack switch lives at the top of every rack. | It has the best view in the whole data center.
+The end of row switch connects all the racks in the row. | It is the social center of the whole aisle.
+The spine switch connects to every leaf switch in the fabric. | It knows everyone, but it never talks to a server directly.
+The leaf switch said to the spine switch: "You never visit me." | The spine said: "I visit everyone. That is my job."
+Leaf-spine architecture has a very clear structure. | It is a tree, just without the leaves falling in autumn. 🌳
+The three-tier network design has core, distribution and access. | Like in a company, the access layer does the real work.
+The core switch is the heart of the whole network. | When it stops, everyone in the building feels it at once.
+The distribution switch sits between core and access layer. | It is middle management, but for network traffic.
+The access switch connects all the users in the building. | It has seen things. It has heard every complaint.
+The collapsed core design merges core and distribution layers. | It sounds dramatic, but it is actually very reasonable.
+The modular chassis switch has many slots for line cards. | Most of them are empty and waiting for a budget. 💸
+The chassis switch weighs about 100 kilograms. | Installing it is a team sport with a lot of shouting.
+The supervisor engine is the brain of the chassis switch. | When it fails over, the whole chassis holds its breath.
+The line card was inserted without shutting down the switch. | Hot swap worked perfectly. The admin's heart did not.
+The switch fabric connects all line cards in the chassis. | It is the internal highway without traffic jams. Mostly. 🚦
+ASIC stands for application specific integrated circuit. | It is the tiny chip that does all the hard work.
+The ASIC forwards billions of packets per second. | The CPU on the same switch struggles to show the prompt. 🚀
+Why is the switch CPU so slow compared to the ASIC? | The ASIC does the work. The CPU just writes the logs. 🐢
+The switch CPU went to 100 percent during the incident. | Somebody ran "debug all" in production. 💥
+"Debug all" is a command you only run once in your career. | The switch never forgets. Neither does your manager. 💥
+The TCAM on the switch was completely full of routes and ACLs. | The switch began forwarding in software, very slowly. 🐢
+TCAM space is the most precious resource on the switch. | It is more valuable than the admin's lunch break.
+The switch has 32 MB of packet buffer for all of its ports. | The storage team says that is not enough. It never is.
+Deep buffer switches are made for data center traffic bursts. | Shallow buffer switches are made for tight budgets.
+The switch has 32 ports of 100 Gigabit Ethernet. | The servers behind it still use their onboard 1 Gbit NICs.
+The breakout cable splits one 100G port into four 25G ports. | It is the switch sharing its dessert with the family. 🔌
+The QSFP module costs more than the admin's laptop. | The admin is not allowed to touch it without gloves. 💸
+The optics are more expensive than the switch itself. | It is like a car where the tires cost the most. 💸
+The third party optic was not accepted by the switch. | "Unsupported transceiver", said the switch, very proudly.
+There is a hidden command to allow unsupported transceivers. | The support contract dies the moment you type it.
+The transceiver shows a receive power of -40 dBm. | That is not a signal. That is the fiber saying goodbye. 👋
+The optical power was measured at the far end of the link. | The light arrived, but it was very tired from the journey.
+The fiber link went down when someone closed the rack door. | The door pinched the fiber. The light could not get through. 💡
+The patch panel in the data center has 288 fiber ports. | Exactly one of them is dirty, and it is always yours. 💡
+The out of band management network is separate for a reason. | When the main network fails, it is the only way back in.
+The out of band network was connected to the main network. | So when everything failed, the backup failed with it. 💾
+The console server connects to every switch in the data center. | It is the emergency exit for admins who locked themselves out.
+The console server was not reachable during the outage. | The emergency exit was locked from the inside.
+The remote hands technician was asked to reboot switch A. | He rebooted switch B. They both are black and have lights. 💥
+The remote hands ticket said: "Please check the blue cable." | Every single cable in the rack is blue. 🔌
+The data center technician unplugged the wrong cable. | It was labeled correctly. He just read it upside down. 🔌
+The migration moved 50 switches into a new data center. | Every cable had to be relabeled. Some of them still cry. 😢
+The old data center was finally switched off after 20 years. | One old switch was still forwarding for a forgotten server.
+The switch was decommissioned and put into the storage room. | It still has a full config and a lot of memories.
+The old switch was sold on an online auction site. | The buyer found the full company config still on it.
+Always erase the switch configuration before throwing it away. | Otherwise someone will know your VLAN names and secrets.
+The e-waste container is full of old switches every year. | It is the retirement home of the network. 🌴
+The switch warranty expired exactly one day before it broke. | The switch has a very precise sense of timing.
+The support contract promised a replacement in four hours. | The spare part arrived after four days, with the wrong ports.
+The spare switch in the storage room was ready for emergencies. | It had the wrong firmware, the wrong power supply, no rails. 🔋
+We keep a cold spare switch for every model in the network. | Except for the model that just failed. Of course.
+The vendor released the end-of-life notice for the switch. | The switch plans to work for another ten years anyway.
+End of support does not mean that the switch stops working. | It means that nobody will help you when it does.
+The switch arrived in a box three times its own size. | The foam inside is now the office cat's favorite bed. 🐱
+The new switch came with a quick start guide in 12 languages. | None of them said how to change the default password. 🔐
+The factory reset button on the switch is deep inside a hole. | The admin used a paper clip and hoped it was the right hole.
+Holding the reset button for 10 seconds resets the switch. | Holding it for 11 seconds resets the admin's career.
+The switch was shipped with very old firmware from the factory. | The first job of every new switch is a long update.
+Zero touch provisioning configures the switch automatically. | It takes zero touches and three days of troubleshooting.
+The switch booted, got an IP by DHCP and downloaded its config. | It downloaded the wrong one and became a different switch.
+The asset tag on the switch has a number that nobody uses. | The inventory system lost it years ago anyway. 🔖
+The serial number sticker on the switch is facing the wall. | You need a mirror and a flashlight to read it.
+Why do all switches look the same in a dark data center? | Because they are all black boxes with green lights.
+The status LED on the switch blinks in a special pattern. | The manual says it means "please contact support". 🚨
+The switch has a locator LED that you can turn on remotely. | It is how you find the right one among 400 switches. 🚨
+The admin turned on the locator LED to find the switch. | It was blinking in the other data center, 200 km away. 🚨
+The switch front panel has 48 small green lights. | At night it looks like a very boring Christmas tree. 🎄
+When all the switch LEDs blink in perfect sync, be afraid. | That is not a light show. That is a broadcast storm. 🌀
+The switch LEDs were turned off to save a little energy. | Now the admin has to trust the monitoring. Very scary. 😱
+The data center is so loud you cannot hear yourself think. | The switches like it that way. Fewer questions.
+Ear protection is recommended for long work in the data center. | The switches have been screaming for years. Nobody listens. 📢
+The data center tour for visitors always ends at the core switch. | They look at the blinking lights and nod very seriously. 🚨
+The CEO visited the data center for the very first time. | He asked which of the switches is the internet.
+The security guard asked what the big switch is for. | "It moves the internet around," said the admin. He nodded. 👮
+The badge reader of the server room needs the network to work. | When the switch fails, nobody can get in to fix it.
+The fire suppression system in the data center uses gas. | The switches will be safe. The admins must leave quickly. 🧯
+The raised floor in the data center hides all the cables. | And 20 years of dust, three screwdrivers and a sandwich. 🥪
+The overhead cable tray above the racks is full of cables. | Nobody knows where half of them go, but all look important. 🔌
+The ladder rack was installed to keep the cables organized. | It is now the place where cables go to die quietly. 🔌
+Colocation means renting space for your switch in a data center. | It is like a hotel room, but for very noisy guests.
+The cross connect order took six weeks to be completed. | The switch waited patiently with its port in no shutdown.
+The cloud provider says you don't need any switches anymore. | Their data centers are full of them. They just hide them. ⛅
+The new data center has 2000 switches and one coffee machine. | Guess which one causes the most support tickets. ☕
+Why did the Ethernet switch become a great life coach? | It always knows exactly where to send people.
+The switch never judges where the packets come from. | It only cares about where they want to go.
+What is a switch's favorite kind of relationship? | Point-to-point, with full duplex communication. 💕
+The switch went on a first date with the new router. | It went well, but they could not agree on which layer to meet. 💕
+The switch and the firewall have a complicated relationship. | The switch lets everyone in. The firewall trusts nobody. 💕
+The load balancer thinks it is more important than the switch. | The switch just forwards the load balancer's traffic. Silently.
+The router always talks about the internet and big networks. | The switch is happy staying local with its neighbors.
+Why does the switch never go on vacation abroad? | It does not route. It only knows its own broadcast domain. 🌴
+The switch was asked what it thinks about the cloud. | It said: "The cloud is just someone else's switch." ⛅
+The switch wrote a book about its long life in the network. | It was called "Frames I Have Forwarded". It sold 48 copies. 📚
+The switch's autobiography had one very dramatic chapter. | It was called "The Night of the Broadcast Storm". 🌀
+What is the Ethernet switch's favorite movie of all time? | "The Matrix", because everything is connected somehow. 🎬
+The switch's favorite TV series is about a very big family. | It is called "All in the Same Broadcast Domain". 📺
+What is the switch's favorite board game to play with friends? | Connect Four. But it would rather connect 48. 🎲
+What is the switch's favorite sport to watch on weekends? | Ping pong. Just without the pong sometimes. 🏓
+The switch took up yoga to learn some new positions. | It is already very good at the spanning tree pose. 🧘
+The switch went to a cooking class on the weekend. | It only learned how to make frame-fried packets. 🍳
+What does a switch order at the Italian restaurant? | Spaghetti cabling, with a side of loops. 🍝
+The switch was asked about its favorite kind of weather. | "Anything but a broadcast storm," it said with a shiver. 🌀
+What is the Ethernet switch's favorite holiday of the year? | Link Day. Every port celebrates when it comes up. 🎉
+Why did the switch go to the art museum on Sunday? | It wanted to see a real mesh topology. 🎨
+The switch applied for a job as a postal worker. | It has years of experience delivering to the right address. 📮
+The switch would be a great mail carrier in the real world. | Except when it does not know you. Then it delivers to all. 📮
+Why did the switch get a job at the telephone company? | It already had lots of experience making connections. 📞
+The switch worked as a waiter in a restaurant for a summer. | It delivered every plate to the right table, very quickly.
+The switch was hired as a school teacher for a small class. | It only answers the student who asked the question. 🎓
+The hub also worked as a teacher, but it did not go well. | It answered every question to every student at once. 🎓
+The switch tried to become a stand-up comedian at night. | Its jokes were good, but only one person heard each of them. 🎤
+The switch wanted to become a DJ at the local night club. | It is great at mixing traffic, but nobody can dance to it. 🎵
+The switch applied to become a traffic officer in the city. | It already knows how to deal with congestion. 🚦
+The switch retired after 15 years of faithful service. | It moved to a quiet home lab and forwards only on weekends. 🌴
+The old switch told the young switch about the good old days. | "Back then we had 10 Mbit, and we were happy with it." 👴
+The young switch asked the old one for the secret of success. | "Learn fast, forget after 300 seconds, and never loop." 🤫
+The switch met a hub at a reunion of old network devices. | They had nothing to say, and the hub said it to everyone.
+The switch and the bridge are distant relatives. | The bridge had two ports. The switch has a big family.
+The bridge was the grandfather of all switches. | It had only two ports, but it had very big dreams. 👴
+The repeater is the loudest member of the network family. | It repeats everything, even the things it should not. 📢
+The modem was invited to the switch's birthday party. | It made strange noises when it arrived, and then connected. 🎂
+The modem and the switch are old friends from the 90s. | The modem still sings its song whenever they meet. 🎵
+The switch received a Christmas card from the router. | It went to every port, because it was addressed to all. 🎄
+The switch sent birthday wishes to its favorite server. | Unicast, personal, and delivered in under a microsecond. 🎂
+The switch has a very small circle of close friends. | Only the ones it has learned in its MAC table.
+The switch's friend list is cleared every five minutes. | It is not unfriendly. It is just aging. 🧠
+Why did the switch feel so lonely on Sunday night? | All the laptops had gone home and all the ports went dark. 😢
+Monday morning is the best time of the week for the switch. | Suddenly all its ports come up and it has friends again.
+The switch is the most social device in the entire office. | It talks to everyone, but it never shares a secret. 🤫
+Why is the switch so popular in the office network? | It always knows who is who and where everyone sits.
+The switch knows more about the office than the reception desk. | It knows who comes in first and who leaves early on Fridays.
+The switch knows who comes to work first every morning. | It is always the same laptop. It is always the intern.
+The switch noticed a device that connects every night at 3 AM. | It was the backup server. It was very lonely. 😢
+The switch saw the same MAC address on two different ports. | Either something is moving, or something is very wrong.
+The MAC address flapped between two ports all afternoon. | The switch felt like it was watching a tennis match. 🎾
+MAC address flapping is a sign of a loop in the network. | Or of a very confused virtual machine that keeps moving. 🔁
+The virtual machine moved to another host during live migration. | The switch had to learn its new home very quickly.
+The virtual switch inside the hypervisor is real, kind of. | It forwards frames, but it has never seen a cable. 🔌
+The virtual switch asked the physical switch for advice. | "Just forward the frames and don't overthink it."
+The physical switch does not believe virtual switches are real. | Then it forwards their traffic every day anyway.
+The container network has so many virtual switches inside. | Even the switches have no idea where they are anymore.
+The software defined network controller manages all switches. | The switches wait for orders like very obedient soldiers.
+The SDN controller went offline for a few minutes today. | The switches suddenly had to think for themselves again.
+OpenFlow lets a controller tell the switch what to do. | The switch finally has a manager who micro-manages everything.
+The switch's flow table had 10,000 entries from the controller. | Only 12 of them were ever used by real traffic.
+The switch was asked to explain what layer 2 really means. | "I don't care about your IP address. I know your MAC."
+The OSI model has seven layers from physical to application. | The switch lives on floor two and never takes the elevator.
+Why does the switch never go to layer 7 parties? | Too many applications, and everyone talks about HTTP. 🎉
+Layer 1 is physical, layer 2 is data link. The switch knows this. | Layer 8 is the user, and that is where most problems live.
+Most network problems in the office happen on layer 8. | That is the user. The switch cannot fix layer 8.
+There is a secret ninth layer of the OSI model. | It is the budget. It controls all the other layers. 🤫
+Every networking student learns the seven OSI layers by heart. | Then they spend their careers debugging layers 1 and 8. 🎓
+"Please Do Not Throw Sausage Pizza Away" is an OSI mnemonic. | The switch lives on the "Do" layer and gets things done. 🍕
+The frame check sequence is at the end of every Ethernet frame. | It is the switch's way of proofreading every message.
+A runt frame is smaller than 64 bytes and gets discarded. | The switch has minimum standards, and it is not ashamed. 📉
+A giant frame is bigger than the MTU allowed on the port. | The switch says it does not fit and drops it without regret. 📉
+The minimum Ethernet frame size is 64 bytes. | Even an empty message needs padding to be taken seriously.
+Padding is added to small frames to reach the minimum size. | It is like adding filler words to reach the word count.
+The Ethernet frame has the destination MAC address first. | Know where you are going before you say where you're from.
+The EtherType field says what is inside the Ethernet frame. | It is the label on the package that says "fragile: IPv4".
+The interframe gap is a short pause between two frames. | Even Ethernet frames need a moment to breathe.
+The broadcast MAC address is FF:FF:FF:FF:FF:FF. | It is the loudest address in the whole network. 📢
+Every MAC address is supposed to be globally unique. | Then someone cloned 50 virtual machines on Friday afternoon.
+The first half of the MAC address identifies the manufacturer. | So the switch always knows who made your device. And judges.
+MAC address randomization on phones confuses every switch. | The same phone looks like a different device every day. 📞
+The switch saw a MAC address of 00:00:00:00:00:00 today. | It decided not to ask any questions and dropped it. 📉
+Someone set a locally administered MAC address by hand. | They wanted a MAC address that spells "BADCAFE".
+A MAC address walks into a bar and orders a drink. | The switch says: "I've got your number for five minutes." 🍺
+Why did the MAC address go to the switch in the first place? | It wanted to be remembered, at least for a little while.
+The MAC address table has a maximum number of entries. | After that, the switch is a hub with an identity crisis. 😵
+The switch's memory is short, but its forwarding is fast. | Honestly, that is also my strategy for Mondays.
+The switch forwards frames at wire speed all day long. | I can't even answer my emails at wire speed. 🚀
+The switch processes millions of frames every second. | I needed 20 minutes to find the right SSH key this morning. 🔑
+The switch has been up for 800 days without a single break. | I have been up for 16 hours and already need coffee. ☕
+The switch never complains, even under very heavy load. | It just silently drops things, like a true professional. 📉
+You logged into this server, and a switch made it possible. | Please say thank you. It will forward your gratitude.
+Behind every successful SSH login is a hardworking switch. | It never gets credit, but it always gets your frames there.
+Your SSH session just traveled through at least one switch. | It was learned, forwarded and delivered in microseconds.
+Another day, another shell, another login to this machine. | Somewhere in a rack, a switch just learned your MAC again.
+Before you type your first command, please take a moment. | Think of the switch that brought you here. It asks for nothing.
+You have successfully logged in to this Linux system. | The switch is proud of you. It knew you would find the way.
+Remember: a switch is looking at your traffic right now. | But only to forward it. It is not that kind of switch. 👀
+This joke was delivered to you by an Ethernet switch. | No frames were harmed in the process. Have a great session. 🎤

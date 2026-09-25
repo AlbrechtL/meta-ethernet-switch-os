@@ -1,0 +1,39 @@
+#!/bin/sh
+# Print one random Ethernet switch joke as two lines.
+#
+# The joke file has one joke per line, "setup | punchline [emoji]". Lines
+# starting with # and empty lines are ignored. Only busybox applets that the
+# image has are used (no shuf, no tr).
+
+JOKE_FILE=${ETHERNET_SWITCH_OS_JOKES:-/usr/share/ethernet-switch-os/jokes.txt}
+
+[ -r "$JOKE_FILE" ] || exit 0
+
+# The emoji only make sense on a UTF-8 terminal, which the serial console
+# usually is not.
+ascii=1
+case "${LC_ALL:-${LC_CTYPE:-$LANG}}" in
+    *[Uu][Tt][Ff]-8*|*[Uu][Tt][Ff]8*) ascii=0 ;;
+esac
+
+# ash has no $RANDOM, so seed awk with the time plus the PID. The seed has to
+# fit in 32 bits: busybox awk converts it to an unsigned int, and a larger
+# value saturates on MIPS, which gives every login the same joke.
+awk -v seed="$(( $(date +%s) + $$ ))" -v ascii="$ascii" '
+    BEGIN { srand(seed) }
+    /^#/ || /^[ \t]*$/ { next }
+    { jokes[++n] = $0 }
+    END {
+        if (!n)
+            exit
+        joke = jokes[int(rand() * n) + 1]
+        if (ascii) {
+            gsub(/[^ -~]/, "", joke)
+            sub(/ +$/, "", joke)
+        }
+        i = index(joke, " | ")
+        if (!i)
+            exit
+        printf "\n  --- Random switch joke ---\n  %s\n  %s\n\n", substr(joke, 1, i - 1), substr(joke, i + 3)
+    }
+' "$JOKE_FILE"
