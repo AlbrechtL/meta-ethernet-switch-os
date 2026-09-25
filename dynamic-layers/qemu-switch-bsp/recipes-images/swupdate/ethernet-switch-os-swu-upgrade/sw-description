@@ -1,0 +1,91 @@
+software =
+{
+	version = "@@DISTRO_VERSION@@";
+	description = "QEMU switch A/B upgrade: the slot that is not running, data partition kept";
+
+	/*
+	 * Revision field of /etc/hwrevision, unique per board, so that a board
+	 * refuses another board's firmware. See ethernet-switch-os-boards.inc.
+	 */
+	hardware-compatibility: [ "@@ETHERNET_SWITCH_OS_HW_COMPAT@@" ];
+
+	/*
+	 * Both markers stay on, unlike on the U-Boot boards: with EFI Boot Guard
+	 * they are the transaction. The transaction marker makes SWUpdate
+	 * create a new environment -- a copy of the running one with the next
+	 * revision, in the config partition that is not running -- and bootenv
+	 * below is refused without it. The state marker finishes it with ustate
+	 * INSTALLED, which makes EFI Boot Guard boot it once as TESTING.
+	 * qemu-switch-ab-confirm (meta-qemu-switch-bsp) confirms it.
+	 *
+	 * The new environment always lands on the config partition of the slot
+	 * written below (BOOT0 with slot A, BOOT1 with slot B): it replaces the
+	 * one with the lower revision, and that is the one of the idle slot.
+	 */
+
+	ethernet-switch-os = {
+		/* Running from slot B (vda5): write slot A (vda4) and BOOT0 (vda2). */
+		slot-a = {
+			images: (
+				{
+					filename = "qemu-switch-image-@@MACHINE@@.rootfs.squashfs-xz";
+					type = "raw";
+					device = "/dev/vda4";
+					/* Streamed, not staged in /tmp (RAM). A bad hash
+					   leaves only the slot that is not running damaged,
+					   and bootenv below is never reached. */
+					installed-directly = true;
+					sha256 = "$swupdate_get_sha256(qemu-switch-image-@@MACHINE@@.rootfs.squashfs-xz)";
+				}
+			);
+			files: (
+				{
+					filename = "bzImage-@@MACHINE@@.bin";
+					device = "/dev/vda2";
+					filesystem = "vfat";
+					path = "/bzImage";
+					sha256 = "$swupdate_get_sha256(bzImage-@@MACHINE@@.bin)";
+				}
+			);
+			/* Applied only after everything above was written. The
+			   new environment starts as a copy of the running one, so
+			   the kernel and its root= have to be named. */
+			bootenv: (
+				{ name = "kernelfile"; value = "C:BOOT0:bzImage"; },
+				{ name = "kernelparams"; value = "root=/dev/vda4 rootfstype=squashfs ro init=/sbin/overlay-init console=ttyS0 panic=5"; }
+			);
+		};
+
+		/* Running from slot A (vda4): write slot B (vda5) and BOOT1 (vda3). */
+		slot-b = {
+			images: (
+				{
+					filename = "qemu-switch-image-@@MACHINE@@.rootfs.squashfs-xz";
+					type = "raw";
+					device = "/dev/vda5";
+					/* Streamed, not staged in /tmp (RAM). A bad hash
+					   leaves only the slot that is not running damaged,
+					   and bootenv below is never reached. */
+					installed-directly = true;
+					sha256 = "$swupdate_get_sha256(qemu-switch-image-@@MACHINE@@.rootfs.squashfs-xz)";
+				}
+			);
+			files: (
+				{
+					filename = "bzImage-@@MACHINE@@.bin";
+					device = "/dev/vda3";
+					filesystem = "vfat";
+					path = "/bzImage";
+					sha256 = "$swupdate_get_sha256(bzImage-@@MACHINE@@.bin)";
+				}
+			);
+			/* Applied only after everything above was written. The
+			   new environment starts as a copy of the running one, so
+			   the kernel and its root= have to be named. */
+			bootenv: (
+				{ name = "kernelfile"; value = "C:BOOT1:bzImage"; },
+				{ name = "kernelparams"; value = "root=/dev/vda5 rootfstype=squashfs ro init=/sbin/overlay-init console=ttyS0 panic=5"; }
+			);
+		};
+	};
+}

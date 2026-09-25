@@ -12,6 +12,13 @@ APP=clixon-switch
 
 test -x "$DAEMON" || exit 0
 
+# Board specific environment for the plugin. The emulated QEMU switch names
+# its front ports in CLIXON_SWITCH_PORTS, as they are not DSA ports there.
+if [ -r /etc/default/clixon-backend ]; then
+    . /etc/default/clixon-backend
+    [ -n "$CLIXON_SWITCH_PORTS" ] && export CLIXON_SWITCH_PORTS
+fi
+
 case "$1" in
     start)
         # Datastores in /var/run (tmpfs), startup_db linked to the saved

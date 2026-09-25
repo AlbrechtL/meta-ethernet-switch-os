@@ -241,6 +241,22 @@ busybox stays PID 1. Check after a build that `rootfs/etc/rc5.d` exists.
 **poky-tiny ships no `/etc/init.d/functions`.** The swupdate init script sources
 it and exits silently without it, hence `initd-functions` in its bbappend.
 
+**With EFI Boot Guard, SWUpdate's markers are the transaction.** On the
+U-Boot boards the `.swu` turns `bootloader_transaction_marker` and
+`bootloader_state_marker` off and writes its own variables. The QEMU
+switch's `.swu` must keep both on: SWUpdate's EBG backend only accepts
+`bootenv` writes inside a transaction, which the transaction marker opens
+(libebgenv copies the running environment, with the next revision, over the
+one with the lower revision), and the state marker's `INSTALLED` closes it,
+which is what makes EFI Boot Guard test-boot the new environment. Since that
+copy starts from the running environment, `bootenv` has to name the new
+slot's `kernelfile` and `kernelparams`, or it would boot the old slot again.
+
+**The EBG boot environment has no room for a comma in `--sourceparams`.**
+wic splits the efibootguard plugin's source parameters on commas, so the
+command line in `qemu-switch-ab.wks.in` says `console=ttyS0` without a baud
+rate. The one in the QEMU `.swu` must match it.
+
 **`eth0` gets no address on purpose.** It is the DSA conduit. The plugin only
 sets it up; `init-ifupdown` is a bad recommendation because its default
 `/etc/network/interfaces` would run DHCP on it.

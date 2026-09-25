@@ -34,3 +34,10 @@ ETHERNET_SWITCH_OS_BOARD_PACKAGES:albrecht-rtl8382mi-test = "ethernet-switch-os-
 ETHERNET_SWITCH_OS_LAN_PORTS:rpi-managed-switch = "lan1 lan2 lan3 lan4"
 ETHERNET_SWITCH_OS_HWREVISION:rpi-managed-switch-rpi0 = "rpi-managed-switch-4-port rpi-managed-switch-4-port-rpi0"
 ETHERNET_SWITCH_OS_HW_COMPAT:rpi-managed-switch-rpi0 = "rpi-managed-switch-4-port-rpi0"
+
+# Emulated 8 port switch on QEMU x86-64 (meta-qemu-switch-bsp). The front
+# ports are virtio-net devices, renamed lan1..lan8 at boot; they are not DSA
+# ports, so clixon-switch is told their names (CLIXON_SWITCH_PORTS).
+ETHERNET_SWITCH_OS_LAN_PORTS:qemu-switch = "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8"
+ETHERNET_SWITCH_OS_HWREVISION:qemux86-64-switch = "qemux86-64-switch qemux86-64-switch-1"
+ETHERNET_SWITCH_OS_HW_COMPAT:qemux86-64-switch = "qemux86-64-switch-1"

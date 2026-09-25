@@ -44,6 +44,15 @@ Userspace policy for RTL83xx switches, on top of `meta-rtl83xx-bsp`:
 
 No NetworkManager, D-Bus, udev or systemd: busybox is init and mdev.
 
+The same userspace runs on the other BSPs, each reached through
+`BBFILES_DYNAMIC` from `dynamic-layers/<collection>/` only when that BSP
+layer is present: the Raspberry Pi switch (`rpi-managed-switch-bsp`, A/B with
+U-Boot) and the emulated QEMU x86-64 switch (`qemu-switch-bsp`, A/B with EFI
+Boot Guard). On the QEMU switch the front ports are virtio-net devices rather
+than DSA ports, so the image names them to the plugin in
+`/etc/default/clixon-backend` (`CLIXON_SWITCH_PORTS`), and SWUpdate is built
+with the EFI Boot Guard bootloader interface instead of U-Boot's.
+
 The BSP stays hardware-only and boots without this layer.
 
 See [TECHNICAL.md](TECHNICAL.md) for the clixon layout on the target and
