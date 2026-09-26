@@ -24,7 +24,7 @@ SRC_URI = " \
 SRCREV = "${AUTOREV}"
 PV = "0.1.0+git"
 
-inherit cargo update-rc.d
+inherit cargo update-rc.d deploy
 
 # There is no crate list to keep in step with upstream's Cargo.lock: cargo
 # downloads the crates itself in do_compile, which therefore needs network
@@ -38,6 +38,64 @@ DEPENDS += "clixon"
 
 # Only the plugin; the other workspace members are the libraries it uses.
 CARGO_BUILD_FLAGS += "-p clixon-switch-plugin"
+
+# The crates are linked into the plugin, but with cargo fetching them BitBake
+# knows nothing of them: no license texts, no SBOM entries. Collect their
+# licenses while the registry cache is there, for ethernet-switch-os-licenses.
+do_compile:append() {
+    "${CARGO}" metadata --format-version 1 --locked --offline \
+        --manifest-path=${CARGO_MANIFEST_PATH} --filter-platform ${RUST_HOST_SYS} \
+        > ${B}/cargo-metadata.json
+}
+do_compile[postfuncs] += "clixon_switch_crate_licenses"
+
+# Every crate the plugin links, i.e. reachable along normal dependencies:
+# build and dev dependencies and proc macros only run on the build host.
+# Workspace members (no source) are this repository, under its LICENSE.
+python clixon_switch_crate_licenses() {
+    import json, shutil
+
+    meta = json.load(open(d.expand("${B}/cargo-metadata.json")))
+    pkgs = {p["id"]: p for p in meta["packages"]}
+    nodes = {n["id"]: n for n in meta["resolve"]["nodes"]}
+    root = next(p["id"] for p in meta["packages"] if p["name"] == "clixon-switch-plugin")
+
+    seen, todo = set(), [root]
+    while todo:
+        i = todo.pop()
+        if i in seen:
+            continue
+        seen.add(i)
+        for dep in nodes[i]["deps"]:
+            if not any(k["kind"] is None for k in dep["dep_kinds"]):
+                continue
+            if any("proc-macro" in t["kind"] for t in pkgs[dep["pkg"]]["targets"]):
+                continue
+            todo.append(dep["pkg"])
+
+    out = d.expand("${B}/crate-licenses")
+    shutil.rmtree(out, ignore_errors=True)
+    os.makedirs(out)
+    manifest = []
+    for p in sorted((pkgs[i] for i in seen if pkgs[i]["source"]),
+                    key=lambda p: (p["name"], p["version"])):
+        src = os.path.dirname(p["manifest_path"])
+        files = [f for f in os.listdir(src) if f.upper().startswith(
+            ("LICENSE", "LICENCE", "COPYING", "COPYRIGHT", "NOTICE", "UNLICENSE"))]
+        if p.get("license_file"):
+            files.append(p["license_file"])
+        if not files:
+            bb.warn("crate %s %s ships no license file" % (p["name"], p["version"]))
+        dst = os.path.join(out, "%s-%s" % (p["name"], p["version"]))
+        os.makedirs(dst)
+        for f in sorted(set(files)):
+            if os.path.isfile(os.path.join(src, f)):
+                shutil.copy(os.path.join(src, f), os.path.join(dst, os.path.basename(f)))
+        manifest.append("CRATE NAME: %s\nCRATE VERSION: %s\nLICENSE: %s\nSOURCE: %s\n"
+                        % (p["name"], p["version"], p["license"] or "unknown", p["source"]))
+    with open(os.path.join(out, "crates.manifest"), "w") as f:
+        f.write("\n".join(manifest))
+}
 
 # Factory default: front ports as labelled by SWITCH_PORT() in the device
 # tree, and the management address on vlan1. The port list is per board, see
@@ -78,7 +136,35 @@ do_install() {
     # The DHCP client's script rewrites resolv.conf on every lease renewal.
     # It follows this symlink, so that happens on tmpfs, not on flash.
     ln -sf ${localstatedir}/run/resolv.conf ${D}${sysconfdir}/resolv.conf
+
+    # Not for the image: the MIBs are published with the firmware only.
+    rm -rf ${B}/mib-install
+    oe_runmake -C ${S} install-mibs DESTDIR=${B}/mib-install DATADIR=/
 }
+
+# Published with the firmware (kas/board/*.yml "artifacts:"): the YANG
+# modules clixon loads, this repository's and clixon's own (both
+# CLICON_YANG_DIR), and the MIBs the SNMP agent serves. The crate licenses
+# are picked up by ethernet-switch-os-licenses.bbclass.
+ETHERNET_SWITCH_OS_TAR = "tar --sort=name --owner=0 --group=0 --numeric-owner \
+    --mtime=@${SOURCE_DATE_EPOCH} --format=gnu"
+
+do_deploy() {
+    rm -rf ${B}/deploy-yang
+    install -d ${B}/deploy-yang/yang/clixon
+    cp -r ${D}${datadir}/clixon-switch/yang ${B}/deploy-yang/yang/clixon-switch
+    find ${RECIPE_SYSROOT}${datadir}/clixon -name '*.yang' \
+        -exec install -m 0644 {} ${B}/deploy-yang/yang/clixon/ \;
+    ${ETHERNET_SWITCH_OS_TAR} -C ${B}/deploy-yang -cf - yang | gzip -9n \
+        > ${DEPLOYDIR}/ethernet-switch-os-yang-${MACHINE}.tar.gz
+
+    ${ETHERNET_SWITCH_OS_TAR} -C ${B}/mib-install/clixon-switch -cf - mib | gzip -9n \
+        > ${DEPLOYDIR}/ethernet-switch-os-mibs-${MACHINE}.tar.gz
+
+    ${ETHERNET_SWITCH_OS_TAR} -C ${B} -cf - crate-licenses | gzip -9n \
+        > ${DEPLOYDIR}/clixon-switch-crate-licenses-${MACHINE}.tar.gz
+}
+addtask deploy after do_install before do_build
 
 # dropbear rejects logins whose shell is not in /etc/shells, and the "cli" user
 # (see the image bbappend) has clixon_cli as its shell.

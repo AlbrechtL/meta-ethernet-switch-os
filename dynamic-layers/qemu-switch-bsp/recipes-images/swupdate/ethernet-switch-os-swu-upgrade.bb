@@ -9,7 +9,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
 
 COMPATIBLE_MACHINE = "^qemu-switch$"
 
-inherit swupdate
+inherit swupdate ethernet-switch-os-licenses
 
 # Two software sets, ethernet-switch-os.slot-a and ethernet-switch-os.slot-b,
 # named after the slot they write. /etc/swupdate/conf.d/20-ethernet-switch-os-mode
