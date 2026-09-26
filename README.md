@@ -9,58 +9,46 @@ Part of **Ethernet Switch OS**. The build lives in
 checks this layer out with [kas](https://kas.readthedocs.io/) and builds the
 images. The other pieces are
 [clixon-switch-rs](https://github.com/AlbrechtL/clixon-switch-rs) (the backend
-plugin), [meta-rtl83xx-bsp](https://github.com/AlbrechtL/meta-rtl83xx-bsp)
-(the hardware) and [rtl838x-qemu](https://github.com/AlbrechtL/rtl838x-qemu)
+plugin), the BSP layers
+([meta-rtl83xx-bsp](https://github.com/AlbrechtL/meta-rtl83xx-bsp),
+[meta-rpi-managed-switch-bsp](https://github.com/AlbrechtL/meta-rpi-managed-switch-bsp),
+[meta-qemu-switch-bsp](https://github.com/AlbrechtL/meta-qemu-switch-bsp))
+for the hardware and [rtl838x-qemu](https://github.com/AlbrechtL/rtl838x-qemu)
 (testing without hardware).
 
-Userspace policy for RTL83xx switches, on top of `meta-rtl83xx-bsp`:
+This is the **distro and userspace layer**: the policy that turns a BSP into
+a managed switch. It provides the `ethernet-switch-os` distro (poky-tiny with
+busybox as init and mdev, no systemd or D-Bus), and on top of any of the
+BSPs:
 
-- [clixon](https://www.clicon.org/) with the
-  [clixon-switch](https://github.com/AlbrechtL/clixon-switch-rs) backend
-  plugin (Rust), which configures the network from an OpenConfig
-  configuration. Factory default: all front ports (`lan1`..`lan8` on the
-  GS1900-8, per board in `conf/distro/include/ethernet-switch-os-boards.inc`)
-  as access ports in VLAN 1 of the VLAN-aware bridge `br-lan`, and
-  **192.168.1.1/24** on `vlan1`.
-  `ssh cli@192.168.1.1` opens the clixon CLI directly, and RESTCONF answers on
-  **http://192.168.1.1/restconf** (plain HTTP/1, no authentication). A
-  status and settings page (system, management address, ports, VLANs,
-  spanning tree, SNMP) on **http://192.168.1.1/** is served by
-  `clixon_restconf` as well and only talks RESTCONF; it links to the
-  SWUpdate web UI. A commit
-  applies a change; only `save` (or a copy-config to startup) makes it survive
-  a reboot. Spanning tree (STP, RSTP, MSTP, OpenConfig `/stp`) runs in
-  mstpd, managed by the plugin; it is off by default. So is the read-only
-  SNMPv3 agent (ietf-snmp `/snmp`): net-snmp's snmpd for the system group
-  and IF-MIB, clixon_snmp for BRIDGE-MIB, Q-BRIDGE-MIB and RSTP-MIB.
-- dropbear SSH (`ssh root@192.168.1.1` for a shell). Both `root` and `cli`
-  have an empty password via the `core/yocto/root-login-with-empty-password`
-  fragment -- proof of concept only.
-- SWUpdate daemon with its web UI on **http://192.168.1.1:8080**, plus two
-  .swu images for the BSP's flash layout: `ethernet-switch-os-swu-factory`
-  (first install from the TFTP initramfs) and
-  `ethernet-switch-os-swu-upgrade` (update in place, user data kept).
-  See "Flash image" in `meta-rtl83xx-bsp`'s README.
+- [clixon](https://www.clicon.org/) with the clixon-switch backend plugin,
+  which configures the network from an OpenConfig configuration; the CLI,
+  RESTCONF and the status and settings web page;
+- spanning tree (mstpd, patched for per-VLAN MSTP) and the SNMPv3 agent;
+- dropbear SSH;
+- SWUpdate with its web UI, and the `.swu` images (`ethernet-switch-os-swu-factory`
+  and `ethernet-switch-os-swu-upgrade`) for each BSP's flash or disk layout.
 
-No NetworkManager, D-Bus, udev or systemd: busybox is init and mdev.
+The BSPs stay hardware-only and boot without this layer. The same userspace
+runs on all of them; each BSP is reached through `BBFILES_DYNAMIC` from
+`dynamic-layers/<collection>/`, only when that BSP layer is present.
 
-The same userspace runs on the other BSPs, each reached through
-`BBFILES_DYNAMIC` from `dynamic-layers/<collection>/` only when that BSP
-layer is present: the Raspberry Pi switch (`rpi-managed-switch-bsp`, A/B with
-U-Boot) and the emulated QEMU x86-64 switch (`qemu-switch-bsp`, A/B with EFI
-Boot Guard). On the QEMU switch the front ports are virtio-net devices rather
-than DSA ports, so the image names them to the plugin in
-`/etc/default/clixon-backend` (`CLIXON_SWITCH_PORTS`), and SWUpdate is built
-with the EFI Boot Guard bootloader interface instead of U-Boot's.
+## Documentation
 
-The BSP stays hardware-only and boots without this layer.
+**Using the firmware is documented in the user guide, which is the only place
+for that information:** [Ethernet Switch OS](https://albrechtl.github.io/ethernet-switch-os/).
+Start with [Installation](https://albrechtl.github.io/ethernet-switch-os/installation/download/)
+and [First login](https://albrechtl.github.io/ethernet-switch-os/installation/first-login/);
+[Firmware architecture](https://albrechtl.github.io/ethernet-switch-os/development/architecture/)
+explains how the pieces fit together.
 
-See [TECHNICAL.md](TECHNICAL.md) for the clixon layout on the target and
-known traps/pitfalls.
+For developers, [TECHNICAL.md](TECHNICAL.md) has the clixon layout on the
+target, how the web page is served, and known traps.
 
 ## Building
 
 Not built on its own.
 [ethernet-switch-os](https://github.com/AlbrechtL/ethernet-switch-os) holds the
 whole build configuration -- which layers, which branches, which machine -- and
-checks them out with kas:
+checks them out with kas, see
+[Building the firmware](https://albrechtl.github.io/ethernet-switch-os/development/building/).
