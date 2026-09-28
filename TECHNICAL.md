@@ -30,50 +30,57 @@ target, and traps worth remembering.
 `br-lan`, adds the ports and puts the address on `vlan1`. If that commit
 fails, clixon commits `failsafe_db`, the factory default.
 
-`/etc/init.d/clixon-restconf` starts `clixon_restconf`, which binds port 80 as
-root and then drops to user `clicon`. Its listener is the `<restconf>` block in
-`/etc/clixon.xml`:
+`/etc/init.d/clixon-restconf` starts `clixon_restconf`, which binds
+127.0.0.1 port 80 as root and then drops to user `clicon`. Its listener is the
+`<restconf>` block in `/etc/clixon.xml`. From the network, RESTCONF is
+`https://<switch>/restconf` through lighttpd (see [HTTPS and the login](#https-and-the-login)),
+with the admin password; `curl -u cli` asks for it, `-k` accepts the
+self-signed certificate. The examples leave both out:
 
 ```sh
-curl http://192.168.1.1/restconf/data/openconfig-interfaces:interfaces
+curl https://192.168.1.1/restconf/data/openconfig-interfaces:interfaces
 # lan3 into VLAN 20, which has to be declared first: applied at once, lost
 # on reboot...
 curl -X PATCH -H 'Content-Type: application/yang-data+json' \
     -d '{"clixon-switch:vlans":{"vlan":[{"vlan-id":20,"config":{"vlan-id":20}}]}}' \
-    http://192.168.1.1/restconf/data/clixon-switch:vlans
+    https://192.168.1.1/restconf/data/clixon-switch:vlans
 curl -X PATCH -H 'Content-Type: application/yang-data+json' \
     -d '{"openconfig-vlan:config":{"interface-mode":"ACCESS","access-vlan":20}}' \
-    http://192.168.1.1/restconf/data/openconfig-interfaces:interfaces/interface=lan3/openconfig-if-ethernet:ethernet/openconfig-vlan:switched-vlan/config
+    https://192.168.1.1/restconf/data/openconfig-interfaces:interfaces/interface=lan3/openconfig-if-ethernet:ethernet/openconfig-vlan:switched-vlan/config
 # DHCP client on vlan1, next to the static address
 curl -X PATCH -H 'Content-Type: application/yang-data+json' \
     -d '{"openconfig-if-ip:ipv4":{"config":{"dhcp-client":true}}}' \
-    http://192.168.1.1/restconf/data/openconfig-interfaces:interfaces/interface=vlan1/openconfig-vlan:routed-vlan/openconfig-if-ip:ipv4
+    https://192.168.1.1/restconf/data/openconfig-interfaces:interfaces/interface=vlan1/openconfig-vlan:routed-vlan/openconfig-if-ip:ipv4
 # ...until saved
 curl -X POST -H 'Content-Type: application/yang-data+json' \
     -d '{"ietf-netconf:input":{"target":{"startup":[null]},"source":{"running":[null]}}}' \
-    http://192.168.1.1/restconf/operations/ietf-netconf:copy-config
+    https://192.168.1.1/restconf/operations/ietf-netconf:copy-config
 ```
 
-Factory reset: `rm /var/lib/clixon/clixon-switch/startup_db` and reboot.
+Factory reset: `ethernet-switch-os-factory-reset` (recipe
+`ethernet-switch-os-auth`), or the RPC `clixon-switch:factory-reset`. It
+marks the data partition, and the BSP's `overlay-init` erases it on the next
+boot: configuration, admin password, SSH host keys and HTTPS certificate.
 
 SNMPv3, read-only, on all addresses (keys made with clixon-switch-rs's
 `scripts/snmp-localize-key` for the engine ID, see its README):
 
 ```sh
 curl -X PUT -H 'Content-Type: application/yang-data+json' -d @snmp.json \
-    http://192.168.1.1/restconf/data/ietf-snmp:snmp
+    https://192.168.1.1/restconf/data/ietf-snmp:snmp
 snmpwalk -v3 -l authPriv -u nms -a SHA -A '...' -x AES -X '...' 192.168.1.1 1.3.6.1.2.1.17
 ```
 
 ## Web page
 
-`clixon_restconf` also serves static files (clixon's `http-data` feature:
-`CLICON_HTTP_DATA_ROOT` and `<enable-http-data>` in `/etc/clixon.xml`), so
-**http://192.168.1.1/** shows a status and settings page on the same origin
-as `/restconf`, which is matched first. The page is plain JavaScript that
-only talks RESTCONF; `/system/state` of `clixon-switch` (host name, firmware
-version from `/etc/os-release`, uptime, load, memory) exists for it. Its
-"Firmware update" button opens the SWUpdate web UI on port 8080.
+lighttpd serves the page's static files from
+`/usr/share/ethernet-switch-os/www`, so **https://192.168.1.1/** shows a
+status and settings page on the same origin as `/restconf`. The page is
+plain JavaScript that only talks RESTCONF; `/system/state` of
+`clixon-switch` (host name, firmware version from `/etc/os-release`, uptime,
+load, memory, `setup-required`) exists for it. Its "Firmware update" button
+opens the SWUpdate web UI at `/update/`, and it has the first-login form, a
+password change and the factory reset.
 
 | File | Content |
 |---|---|
@@ -138,23 +145,48 @@ can proxy. http-data serves GET/HEAD only, does not follow symbolic links,
 and sends anything but html, css, js, svg, ico and fonts as
 `application/octet-stream`.
 
-**No user management yet.** Everyone who reaches the switch can read and
-change the settings on the page, configure over RESTCONF and upload
-firmware. The intended design:
+clixon_restconf still has http-data enabled (clixon-switch-rs sets it up),
+but on 127.0.0.1 nobody asks it for the page any more.
 
-- RESTCONF: `auth-type user` without `allow-auth-none`, a restconf plugin
-  whose `ca_auth` callback checks HTTP Basic credentials (see clixon's
-  `example/main/example_restconf.c`), and NACM (`CLICON_NACM_MODE internal`)
-  with an admin group (read-write) and a read-only group. The page, being
-  http-data, gets the same login.
-- SWUpdate: mongoose's digest authentication (`--auth-domain`,
-  `--global-auth-file` in `SWUPDATE_MONGOOSE_EXTRA_ARGS` or
-  `/etc/swupdate.cfg`) with admins only. It is all-or-nothing, and **fails
-  open**: without a readable password file every request is let in
-  (`mongoose/mongoose_interface.c`), so startup has to refuse to run the web
-  server without one.
-- TLS on RESTCONF along with it: Basic authentication over plain HTTP sends
-  the password in clear.
+## HTTPS and the login
+
+The full description is in the user guide's
+[Access and security](https://albrechtl.github.io/ethernet-switch-os/development/architecture/#access-and-security);
+this is where the pieces live.
+
+| Piece | Recipe |
+|---|---|
+| lighttpd on 443: TLS, basic auth, `/restconf` → 127.0.0.1:80, `/update/` → 127.0.0.1:8080, the page's files | `recipes-extended/lighttpd` (bbappend: `lighttpd.conf`, init script that makes the certificate) |
+| SWUpdate on 127.0.0.1:8080; on the TFTP initramfs on port 8080 of every address | `recipes-support/swupdate/files/09-ethernet-switch-os-web` |
+| `ethernet-switch-os-set-password`, `ethernet-switch-os-factory-reset`, `/etc/ethernet-switch-os/setup-required` | `recipes-support/ethernet-switch-os-auth` |
+| First-login setup on SSH and the serial console | `recipes-support/ethernet-switch-os-jokes/files/ethernet-switch-os-cli` |
+| bcrypt in shadow; `ENCRYPT_METHOD`, `BCRYPT_*_ROUNDS`, `SU_WHEEL_ONLY`, `/etc/securetty` | `recipes-extended/shadow`, `ethernet-switch-os-image-common.inc` |
+| Reset button → factory reset | `recipes-support/ethernet-switch-os-buttons` |
+
+Why not clixon's own TLS and a RESTCONF auth plugin: SWUpdate's page would
+still need TLS and a login of its own, and mongoose's digest authentication
+fails open without a readable password file (`mongoose/mongoose_interface.c`).
+One proxy in front of both gives one certificate, one login and one origin,
+and neither server changes.
+
+**lighttpd is built without pcre**, so `lighttpd.conf` matches URLs with
+`==` and `=^` only. `with_pcre2` has to be switched off separately, it wins
+over `-Dwith_pcre=disabled`.
+
+**clixon_restconf kept every connection open**, even after lighttpd's
+`Connection: close`, and a 204 has no `Content-Length`: lighttpd waited for
+the end of a body that never came, so every 204 (copy-config, `set-password`,
+`factory-reset`) hung until a timeout. `recipes-clixon/clixon/files/0005-*`
+makes it close the connection after the reply.
+
+**Request bodies are buffered in `server.upload-dirs`**, `/var/tmp` by
+default, which only root may write; lighttpd runs as `lighttpd`, so the
+`.swu` upload failed with 500. It is `/tmp` now.
+
+**The two setup URLs need no login**: `POST .../clixon-switch:set-password`
+and `GET .../clixon-switch:system/state/setup-required`. The RPC is safe
+without one because the backend plugin demands `current-password` once a
+password is set.
 
 ## Traps
 

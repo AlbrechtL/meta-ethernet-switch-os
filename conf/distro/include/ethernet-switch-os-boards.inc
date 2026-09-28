@@ -18,7 +18,9 @@
 ETHERNET_SWITCH_OS_LAN_PORTS ?= "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8"
 ETHERNET_SWITCH_OS_HWREVISION ?= "gs1900-8 a1"
 ETHERNET_SWITCH_OS_HW_COMPAT ?= "a1"
-ETHERNET_SWITCH_OS_BOARD_PACKAGES ?= ""
+# The reset button (KEY_RESTART in the device tree): reboot, or a factory
+# reset when held for 5 seconds.
+ETHERNET_SWITCH_OS_BOARD_PACKAGES ?= "ethernet-switch-os-buttons"
 
 # Albrecht RTL8382MI test switch: 20 ports, DIP switches and a reset switch.
 ETHERNET_SWITCH_OS_LAN_PORTS:albrecht-rtl8382mi-test = " \

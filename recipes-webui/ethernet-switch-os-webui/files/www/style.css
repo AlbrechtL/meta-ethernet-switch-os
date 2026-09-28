@@ -100,6 +100,10 @@ main {
 }
 .wide, .error, .notice { grid-column: 1 / -1; }
 
+/* First-login setup: the only thing on the page until a password is set. */
+.setup { max-width: 440px; margin: 32px auto; }
+.setup form > * + * { margin-top: 12px; }
+
 .muted { color: var(--muted); }
 .error {
   margin: 0;

@@ -1,0 +1,96 @@
+From 8210047c92c5e607b03e1142e709e53181e2c9d2 Mon Sep 17 00:00:00 2001
+From: Albrecht Lohofener <albrechtloh@gmx.de>
+Date: Sun, 27 Sep 2026 23:32:10 +0200
+Subject: [PATCH] restconf: close the HTTP/1 connection after a request with
+ Connection: close
+
+RFC 9112 section 9.6: a server that receives "Connection: close" closes
+the connection after sending the response. clixon_restconf kept every
+HTTP/1 connection open. A reverse proxy in front of it, such as
+lighttpd, sends "Connection: close" and reads a response that has no
+Content-Length (204 No Content, e.g. an RPC without output or
+copy-config) until the connection is closed, so the response never
+reached the client.
+
+Upstream-Status: Pending
+---
+ apps/restconf/restconf_native.c | 35 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
+
+diff --git a/apps/restconf/restconf_native.c b/apps/restconf/restconf_native.c
+index d5f610c..11fde5e 100644
+--- a/apps/restconf/restconf_native.c
++++ b/apps/restconf/restconf_native.c
+@@ -41,6 +41,7 @@
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <string.h>
++#include <strings.h>
+ #include <syslog.h>
+ #include <pwd.h>
+ #include <ctype.h>
+@@ -656,6 +657,29 @@ read_regular(restconf_conn *rc,
+ 
+ #ifdef HAVE_HTTP1
+ 
++/*! Whether a Connection header value has the token "close"
++ *
++ * @param[in]  value  Header value, eg "close" or "Upgrade, close", or NULL
++ * @retval     1      Yes
++ * @retval     0      No
++ */
++static int
++http1_connection_close(const char *value)
++{
++    const char *p = value;
++    size_t      len;
++
++    while (p != NULL && *p != '\0'){
++        while (*p == ' ' || *p == '\t' || *p == ',')
++            p++;
++        len = strcspn(p, " \t,");
++        if (len == strlen("close") && strncasecmp(p, "close", len) == 0)
++            return 1;
++        p += len;
++    }
++    return 0;
++}
++
+ /*! Restconf HTTP/1 processing after chunk of bytes read
+  *
+  * @param[in]  rc           Restconf connection handle 
+@@ -678,6 +702,7 @@ restconf_http1_process(restconf_conn *rc,
+     int                   status;
+     cbuf                 *cberr = NULL;
+     int                   ret;
++    int                   close_after = 0;
+ 
+     h = rc->rc_h;
+     if ((sd = restconf_stream_find(rc, 0)) == NULL){
+@@ -779,6 +804,14 @@ restconf_http1_process(restconf_conn *rc,
+     if (rc->rc_ssl)
+         if (restconf_param_set(h, "HTTPS", "https") < 0)
+             goto done;
++    /* RFC 9112 9.6: after a request with "Connection: close" the server
++     * closes the connection once it has sent the response. A reverse proxy
++     * such as lighttpd, which always sends it, reads a response without
++     * Content-Length (204 No Content) until the connection is closed.
++     * Read before the processing below, which clears the request parameters,
++     * and not as rc_exit, which would make it refuse the request.
++     */
++    close_after = http1_connection_close(restconf_param_get(h, "HTTP_CONNECTION"));
+     /* main restconf processing */
+     if (restconf_http1_path_root(h, rc) < 0)
+         goto done;
+@@ -795,7 +828,7 @@ restconf_http1_process(restconf_conn *rc,
+         cvec_free(sd->sd_qvec);
+         sd->sd_qvec = NULL;
+     }
+-    if (ret == 0 || rc->rc_exit){  /* Server-initiated exit */
++    if (ret == 0 || rc->rc_exit || close_after){  /* Server-initiated exit */
+         if (restconf_close_ssl_socket(rc, __func__, 0) < 0)
+             goto done;
+         goto closed;
+-- 
+2.53.0
+

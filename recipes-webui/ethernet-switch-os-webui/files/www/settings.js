@@ -634,3 +634,55 @@ function toggleSnmp() {
     { applyLabel: enabled ? "Turn off" : "Turn on" },
   );
 }
+
+// ---------------------------------------------------------------------------
+// Administration. Neither changes the configuration, so neither needs Save.
+
+function editPassword() {
+  const password = (name, autocomplete) =>
+    input(name, "", { type: "password", autocomplete, maxlength: 128, required: true });
+  openDialog(
+    "Change the admin password",
+    () => [
+      field("Current password", password("current", "current-password")),
+      field("New password", password("password", "new-password"), "8 to 128 characters."),
+      field("Repeat the new password", password("repeat", "new-password")),
+      note("The password of cli changes for this page, SSH and the serial console. The browser asks for the new one next."),
+    ],
+    async (f) => {
+      if (f.password.value !== f.repeat.value) fail("The new passwords do not match.");
+      await restconf("POST", "operations/clixon-switch:set-password", {
+        "clixon-switch:input": {
+          "current-password": f.current.value,
+          "new-password": f.password.value,
+        },
+      });
+      return false;
+    },
+    { applyLabel: "Change password" },
+  );
+}
+
+function factoryReset() {
+  openDialog(
+    "Factory reset?",
+    () => [
+      note(
+        "Erases all settings, the admin password, the SSH host keys and the HTTPS certificate, and reboots. " +
+          "The switch comes back with the factory settings, at 192.168.1.1, and asks for a new password.",
+        true,
+      ),
+    ],
+    async () => {
+      await restconf("POST", "operations/clixon-switch:factory-reset");
+      started = false;
+      setUnsaved(false);
+      $("main").replaceChildren(
+        el("p", { class: "notice" }, "Factory reset: the switch reboots. It comes back at https://192.168.1.1/ and asks for a new password."),
+      );
+      $("nav").hidden = true;
+      return false;
+    },
+    { applyLabel: "Erase and reboot" },
+  );
+}

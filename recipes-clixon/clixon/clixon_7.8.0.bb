@@ -16,11 +16,15 @@ SRCREV = "62a901b1c6215703a7c37e1ff4d51a155587af7d"
 # 0003: tables with augments (Q-BRIDGE-MIB's dot1qPortVlanTable) and with
 #       index leaves from other tables; SMI default values.
 # 0004: links against net-snmp without MIB loading (net-snmp bbappend).
+# clixon_restconf behind lighttpd (recipes-extended/lighttpd):
+# 0005: closes the connection after "Connection: close"; lighttpd waits for
+#       that to end a 204 (copy-config, RPCs without output).
 SRC_URI += " \
     file://0001-SNMP-backport-OID-and-octet-string-bounds-checks-fro.patch \
     file://0002-SNMP-support-YANG-binary-and-mac-address-types.patch \
     file://0003-SNMP-fix-tables-with-augments-and-index-leaves-from-.patch \
     file://0004-SNMP-build-with-net-snmp-without-MIB-loading.patch \
+    file://0005-restconf-close-the-HTTP-1-connection-after-a-request.patch \
 "
 
 # openssl: libclixon uses SHA from libcrypto (lib/src/clixon_digest.c), and

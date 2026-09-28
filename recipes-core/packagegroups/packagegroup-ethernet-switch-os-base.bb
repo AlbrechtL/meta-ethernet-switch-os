@@ -1,7 +1,8 @@
 SUMMARY = "Base userspace for Ethernet switches"
 DESCRIPTION = "The clixon YANG management framework with the clixon-switch \
 backend plugin, which configures the network, its CLI, RESTCONF and status \
-web page, and the SWUpdate daemon with its web interface."
+web page, the SWUpdate daemon with its web interface, lighttpd as the HTTPS \
+front end of both, and the admin password and factory reset."
 
 # packagegroup.bbclass defaults to allarch, and an allarch packagegroup must not
 # RDEPEND on names the debian class renames per architecture (a package holding
@@ -18,9 +19,11 @@ RDEPENDS:${PN} = " \
     clixon \
     clixon-switch \
     clixon-switch-restconf \
+    ethernet-switch-os-auth \
     ethernet-switch-os-jokes \
     ethernet-switch-os-webui \
     snake \
     swupdate \
     swupdate-www \
+    lighttpd \
 "

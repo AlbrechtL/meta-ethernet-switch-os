@@ -1,7 +1,12 @@
 // Switch status page. Everything comes from RESTCONF on the same origin
-// (clixon_restconf serves this file too). The edit dialogs are in
-// settings.js; they change the running configuration, and "Save" copies it
-// to startup.
+// (lighttpd serves this file and forwards /restconf to clixon_restconf). The
+// edit dialogs are in settings.js; they change the running configuration,
+// and "Save" copies it to startup.
+//
+// The page itself needs no login, RESTCONF does: the browser asks for the
+// password on the first request that lighttpd answers with 401, and sends it
+// along from then on. Until the first password is set, the page shows only
+// the setup form (see start()).
 
 "use strict";
 
@@ -9,15 +14,16 @@ const RESTCONF = "/restconf/";
 const REFRESH_MS = 5000;
 // A commit that moves the management address never gets its answer through.
 const TIMEOUT_MS = 15000;
-// swupdate's web server on the same host. Plain HTTP: swupdate is built
-// without TLS.
-const UPDATE_PORT = 8080;
+// SWUpdate's page, forwarded by lighttpd behind the same login.
+const UPDATE_PATH = "/update/";
 
 class RestconfError extends Error {
   constructor(status, body) {
     const errors = [].concat(body?.["ietf-restconf:errors"]?.error ?? []);
     const messages = errors.map((e) => e["error-message"]).filter(Boolean);
-    super(messages.length ? messages.join("; ") : `HTTP ${status}`);
+    // 401 only comes from lighttpd: the login was cancelled or is outdated.
+    const unauthorized = "Not logged in. Reload the page and log in as cli with the admin password.";
+    super(status === 401 ? unauthorized : messages.length ? messages.join("; ") : `HTTP ${status}`);
     this.status = status;
     this.tag = errors[0]?.["error-tag"];
   }
@@ -436,10 +442,13 @@ async function save() {
 // ---------------------------------------------------------------------------
 
 let loading = false;
+// Set by start() once the page shows the switch.
+let started = false;
 
 async function refresh() {
-  // An open dialog would lose what is being typed.
-  if (loading || $("dialog").open) return;
+  // An open dialog would lose what is being typed. Not started: the setup
+  // form is shown, or the switch is rebooting after a factory reset.
+  if (!started || loading || $("dialog").open) return;
   loading = true;
   $("status").textContent = "Updating…";
   try {
@@ -486,21 +495,81 @@ async function refresh() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// First-login setup. Until the admin password is set, lighttpd answers only
+// two RESTCONF requests without a login: reading setup-required and the
+// set-password RPC. The page shows just the form for that.
+
+function showSetup() {
+  $("main").hidden = true;
+  $("nav").hidden = true;
+  $("setup").hidden = false;
+  const form = $("setup-form");
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    const error = $("setup-error");
+    const { password, repeat } = form.elements;
+    error.hidden = true;
+    if (password.value !== repeat.value) {
+      error.textContent = "The passwords do not match.";
+      error.hidden = false;
+      return;
+    }
+    $("setup-apply").disabled = true;
+    try {
+      await restconf("POST", "operations/clixon-switch:set-password", {
+        "clixon-switch:input": { "new-password": password.value },
+      });
+      form.replaceWith(
+        el(
+          "div",
+          {},
+          el("p", {}, "The password is set. Log in as ", el("code", {}, "cli"), " with it."),
+          el("div", { class: "actions" }, el("button", { type: "button", class: "button", onclick: () => location.reload() }, "Continue")),
+        ),
+      );
+    } catch (e) {
+      error.textContent = e.message;
+      error.hidden = false;
+    } finally {
+      $("setup-apply").disabled = false;
+    }
+  };
+}
+
+async function start() {
+  let setup = false;
+  try {
+    setup = (await restconfGet("clixon-switch:system/state/setup-required", { optional: true })) === true;
+  } catch {
+    // An older firmware or a switch that does not answer: the normal page
+    // says what is wrong.
+  }
+  if (setup) {
+    showSetup();
+    return;
+  }
+  started = true;
+  refresh();
+}
+
 $("host").textContent = location.hostname;
-$("update").href = `http://${location.hostname}:${UPDATE_PORT}/`;
+$("update").href = UPDATE_PATH;
 $("refresh").addEventListener("click", refresh);
 $("save").addEventListener("click", save);
 $("edit-system").addEventListener("click", () => editSystem());
 $("edit-stp").addEventListener("click", () => editStp());
+$("change-password").addEventListener("click", () => editPassword());
+$("factory-reset").addEventListener("click", () => factoryReset());
 try {
   setUnsaved(sessionStorage.getItem("unsaved") === "1");
 } catch {
   setUnsaved(false);
 }
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) refresh();
+  if (started && !document.hidden) refresh();
 });
 setInterval(() => {
-  if (!document.hidden) refresh();
+  if (started && !document.hidden) refresh();
 }, REFRESH_MS);
-refresh();
+start();

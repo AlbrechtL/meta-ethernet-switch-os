@@ -4,9 +4,10 @@ configuration to the kernel: front ports in a VLAN-aware bridge, routed \
 VLAN interfaces with static IPv4 addresses or a DHCP client (busybox udhcpc), \
 spanning tree (STP, RSTP, MSTP) with mstpd, and a read-only SNMPv3 agent \
 (snmpd with clixon_snmp for BRIDGE-MIB, Q-BRIDGE-MIB and RSTP-MIB). \
-Also installs the YANG modules, clixon.xml, the CLI specification, the \
-factory default, the udhcpc script and init scripts for the backend and \
-RESTCONF. The status web page clixon_restconf serves is a separate recipe, \
+Also installs the YANG modules, clixon.xml, the CLI specification with its \
+plugin (password, factory-reset), the factory default, the udhcpc script and \
+init scripts for the backend and RESTCONF, which listens on 127.0.0.1 behind \
+lighttpd. The status web page clixon_restconf serves is a separate recipe, \
 ethernet-switch-os-webui."
 HOMEPAGE = "https://github.com/AlbrechtL/clixon-switch-rs"
 # The repository and the OpenConfig modules are Apache-2.0, the IETF/IANA
@@ -115,6 +116,7 @@ do_install() {
         DATADIR=${datadir} \
         LOCALSTATEDIR=${localstatedir} \
         RESTCONF_PORT=80 \
+        RESTCONF_ADDRESS=127.0.0.1 \
         HTTP_DATA_ROOT=${datadir}/ethernet-switch-os/www \
         LAN_PORTS="${ETHERNET_SWITCH_OS_LAN_PORTS}" \
         LAN_ADDRESS="${ETHERNET_SWITCH_OS_LAN_ADDRESS}" \
@@ -197,8 +199,10 @@ FILES:${PN} += " \
 # plugin; trimmed in recipes-networking/net-snmp, patched in recipes-clixon.
 # os-release: the plugin reads /etc/os-release for the firmware version in
 # /system/state.
+# ethernet-switch-os-auth: the scripts behind the set-password and
+# factory-reset RPCs.
 RDEPENDS:${PN} = "clixon base-files ${VIRTUAL-RUNTIME_base-utils} mstpd-mstpd \
-    clixon-snmp net-snmp-server-snmpd os-release"
+    clixon-snmp net-snmp-server-snmpd os-release ethernet-switch-os-auth"
 RDEPENDS:${PN}-restconf = "${PN}"
 
 # The backend configures the network, so it takes the old network script's

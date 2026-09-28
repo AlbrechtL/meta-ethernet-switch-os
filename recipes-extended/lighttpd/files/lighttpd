@@ -1,0 +1,98 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          lighttpd
+# Required-Start:    $networking clixon-restconf
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: HTTPS front end (port 443) for RESTCONF, the web interface and SWUpdate
+### END INIT INFO
+#
+# Replaces oe-core's script. On the first start, and after a factory reset,
+# it makes the self-signed certificate and an empty htpasswd file (see
+# /etc/lighttpd/lighttpd.conf).
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/lighttpd
+CONFIG=/etc/lighttpd/lighttpd.conf
+TLS=/etc/ethernet-switch-os/tls
+HTPASSWD=/etc/lighttpd/htpasswd
+# server.pid-file in lighttpd.conf.
+PIDFILE=/run/lighttpd.pid
+
+test -x "$DAEMON" || exit 0
+
+# P-256: a few seconds on the RTL838x, where RSA-2048 would take a minute.
+# The switch has no real-time clock, so the dates are fixed instead of
+# counted from the clock: a certificate valid from boot time 1970 would be
+# "not yet valid" or long expired for a browser.
+make_certificate() {
+    [ -s "$TLS/cert.pem" ] && [ -s "$TLS/key.pem" ] && return 0
+    echo -n "making the HTTPS certificate... "
+    host=$(hostname)
+    mkdir -p "$TLS"
+    chmod 0700 "$TLS"
+    OPENSSL_CONF=/dev/null openssl req -x509 -config /dev/null \
+        -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes \
+        -keyout "$TLS/key.pem.new" -out "$TLS/cert.pem.new" \
+        -subj "/CN=$host" -addext "subjectAltName=DNS:$host" \
+        -addext "basicConstraints=critical,CA:FALSE" \
+        -not_before 20000101000000Z -not_after 99991231235959Z 2>/dev/null \
+        || return 1
+    chmod 0600 "$TLS/key.pem.new"
+    mv "$TLS/key.pem.new" "$TLS/key.pem"
+    mv "$TLS/cert.pem.new" "$TLS/cert.pem"
+}
+
+# SIGINT is lighttpd's graceful shutdown: it stops listening at once and
+# finishes the requests in progress (up to server.graceful-shutdown-timeout,
+# 8 s) before it exits. ethernet-switch-os-set-password restarts lighttpd
+# while the web interface's request for the new password is still on its way
+# back through it.
+stop_graceful() {
+    # The pidfile, not pidof: pidof would find this script too, whose name
+    # is lighttpd as well.
+    pid=$(cat "$PIDFILE" 2>/dev/null)
+    [ -n "$pid" ] && kill -INT "$pid" 2>/dev/null || return 0
+    t=0
+    while kill -0 "$pid" 2>/dev/null && [ $t -lt 100 ]; do
+        usleep 100000
+        t=$((t + 1))
+    done
+    kill -TERM "$pid" 2>/dev/null
+    return 0
+}
+
+# Empty until ethernet-switch-os-set-password writes the first password.
+make_htpasswd() {
+    [ -e "$HTPASSWD" ] && return 0
+    : > "$HTPASSWD"
+    chgrp lighttpd "$HTPASSWD"
+    chmod 0640 "$HTPASSWD"
+}
+
+case "$1" in
+    start)
+        echo -n "Starting lighttpd: "
+        make_certificate || { echo "cannot make the certificate"; exit 1; }
+        make_htpasswd
+        start-stop-daemon -S -x "$DAEMON" -- -f "$CONFIG" && echo "lighttpd."
+        ;;
+    stop)
+        echo -n "Stopping lighttpd: "
+        stop_graceful
+        echo "lighttpd."
+        ;;
+    restart)
+        "$0" stop
+        "$0" start
+        ;;
+    configtest)
+        "$DAEMON" -tt -f "$CONFIG"
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|configtest}"
+        exit 1
+        ;;
+esac
+
+exit 0

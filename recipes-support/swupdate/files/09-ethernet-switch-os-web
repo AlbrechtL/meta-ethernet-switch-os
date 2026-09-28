@@ -1,2 +1,12 @@
 # Consumed by /usr/lib/swupdate/conf.d/10-mongoose-args.
-SWUPDATE_MONGOOSE_EXTRA_ARGS="-p 8080"
+#
+# On the installed system SWUpdate's web server listens on 127.0.0.1 only:
+# lighttpd forwards https://<switch>/update/ to it, after the password check
+# (recipes-extended/lighttpd). The TFTP initramfs, the factory installer, has
+# no overlay root and no password yet; there it stays on port 8080 of every
+# address, as the installation instructions expect.
+if grep -q '^overlay / overlay ' /proc/mounts; then
+    SWUPDATE_MONGOOSE_EXTRA_ARGS="-p 127.0.0.1:8080"
+else
+    SWUPDATE_MONGOOSE_EXTRA_ARGS="-p 8080"
+fi

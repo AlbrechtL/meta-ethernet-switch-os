@@ -1,7 +1,7 @@
 SUMMARY = "Button and switch actions for Ethernet Switch OS"
 DESCRIPTION = "triggerhappy rules for boards with buttons or DIP switches: \
-KEY_RESTART reboots when released within 5 seconds and resets to the factory \
-default when held longer; BTN_0..BTN_4 are logged to syslog."
+KEY_RESTART reboots when released within 5 seconds and does a factory reset \
+when held longer; BTN_0..BTN_4 are logged to syslog."
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
@@ -23,5 +23,5 @@ do_install() {
     install -m 0755 ${S}/ethernet-switch-os-reset-key ${D}${sbindir}/
 }
 
-# The factory reset deletes the saved configuration of clixon-switch.
-RDEPENDS:${PN} = "triggerhappy busybox"
+# ethernet-switch-os-auth: the factory reset.
+RDEPENDS:${PN} = "triggerhappy busybox ethernet-switch-os-auth"

@@ -1,7 +1,8 @@
 SUMMARY = "Random Ethernet switch joke at login"
 DESCRIPTION = "Prints a random two-line joke when root or the cli user logs in \
 on the serial console or over SSH. The cli user's login shell is clixon_cli, \
-which does not read /etc/profile.d, so it gets a small wrapper as its shell."
+which does not read /etc/profile.d, so it gets a small wrapper as its shell. \
+The wrapper also runs the first-login setup of the admin password."
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 

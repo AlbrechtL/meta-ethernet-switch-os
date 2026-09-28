@@ -1,0 +1,36 @@
+#!/bin/sh
+# Factory reset: erase everything the switch has written, then reboot.
+#
+#   ethernet-switch-os-factory-reset [--later]
+#
+# Everything the switch writes lands in the overlay's upper layer on the
+# "data" partition: the saved configuration, the admin password, the SSH host
+# keys, the HTTPS certificate. The partition cannot be wiped while the overlay
+# on it is in use, so this only leaves a marker on it and reboots. The BSP's
+# overlay-init sees the marker early in the next boot and wipes the partition
+# before it builds the overlay. The switch then starts like after a fresh
+# install: factory configuration, first-login setup, new keys.
+#
+# --later returns at once and reboots two seconds later, so that the caller
+# (clixon-switch's factory-reset RPC) still gets its reply out.
+
+set -e
+
+MARKER=/overlay/.factory-reset
+
+# /overlay is the data partition itself, not the merged root. tmpfs there
+# means overlay-init could not mount it, and there is nothing to erase.
+if ! awk '$2 == "/overlay" && $3 != "tmpfs" { found = 1 } END { exit !found }' /proc/mounts; then
+    echo "no data partition on /overlay: nothing to reset" >&2
+    exit 1
+fi
+
+: > "$MARKER"
+sync
+logger -t factory-reset "the data partition is erased on the next boot; rebooting"
+
+if [ "$1" = "--later" ]; then
+    setsid sh -c 'sleep 2; reboot' </dev/null >/dev/null 2>&1 &
+else
+    reboot
+fi

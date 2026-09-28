@@ -16,7 +16,7 @@
       <h1 id="hostname">Switch</h1>
       <span id="firmware" class="muted"></span>
     </div>
-    <nav>
+    <nav id="nav">
       <span id="status" class="muted"></span>
       <button id="refresh" type="button">Refresh</button>
       <button id="save" type="button">Save configuration</button>
@@ -24,7 +24,28 @@
     </nav>
   </header>
 
-  <main>
+  <section id="setup" class="card setup" hidden>
+    <h2>Set the admin password</h2>
+    <p>
+      The switch has no password yet. Choose one for the admin account
+      <code>cli</code>: it is used for this web interface, SSH and the serial
+      console. 8 to 128 characters.
+    </p>
+    <form id="setup-form">
+      <label class="field"><span>New password</span>
+        <input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+      </label>
+      <label class="field"><span>Repeat the password</span>
+        <input name="repeat" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+      </label>
+      <p id="setup-error" class="error" role="alert" hidden></p>
+      <div class="actions">
+        <button id="setup-apply" type="submit" class="button">Set password</button>
+      </div>
+    </form>
+  </section>
+
+  <main id="main">
     <p id="unsaved" class="notice" hidden>
       Changes are active but not saved: a reboot undoes them.
       Use <strong>Save configuration</strong> to keep them.
@@ -92,6 +113,18 @@
     </section>
 
     <section class="card">
+      <h2>Administration</h2>
+      <p class="muted">
+        The admin account <code>cli</code> logs in to this page, over SSH and
+        on the serial console, all with the same password.
+      </p>
+      <div class="actions">
+        <button id="change-password" type="button" class="small">Change password</button>
+        <button id="factory-reset" type="button" class="small">Factory reset</button>
+      </div>
+    </section>
+
+    <section class="card">
       <div class="card-head">
         <h2>SNMP</h2>
         <span id="snmp-actions" class="actions"></span>
@@ -119,7 +152,8 @@
   <footer class="muted">
     Changes take effect at once and are kept across a reboot only once saved.
     The switch can also be configured with
-    <code>ssh cli@<span id="host"></span></code> or RESTCONF.
+    <code>ssh cli@<span id="host"></span></code> or RESTCONF below
+    <code>/restconf</code>, with the same login.
   </footer>
 </body>
 </html>

@@ -1,0 +1,3 @@
+# The admin password has not been set yet. Logins ask for one, and the web
+# interface shows the setup page. ethernet-switch-os-set-password deletes this
+# file; a factory reset brings it back.
