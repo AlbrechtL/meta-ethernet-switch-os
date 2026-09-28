@@ -62,7 +62,8 @@ stop_graceful() {
     return 0
 }
 
-# Empty until ethernet-switch-os-set-password writes the first password.
+# Empty until the first-login setup (ethernet-switch-os-set-password) creates
+# the admin account.
 make_htpasswd() {
     [ -e "$HTPASSWD" ] && return 0
     : > "$HTPASSWD"

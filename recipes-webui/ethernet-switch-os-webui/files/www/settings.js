@@ -647,7 +647,7 @@ function editPassword() {
       field("Current password", password("current", "current-password")),
       field("New password", password("password", "new-password"), "8 to 128 characters."),
       field("Repeat the new password", password("repeat", "new-password")),
-      note("The password of cli changes for this page, SSH and the serial console. The browser asks for the new one next."),
+      note("The admin password changes for this page, SSH and the serial console. The browser asks for the new one next."),
     ],
     async (f) => {
       if (f.password.value !== f.repeat.value) fail("The new passwords do not match.");

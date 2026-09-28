@@ -1,8 +1,7 @@
 SUMMARY = "Random Ethernet switch joke at login"
-DESCRIPTION = "Prints a random two-line joke when root or the cli user logs in \
-on the serial console or over SSH. The cli user's login shell is clixon_cli, \
-which does not read /etc/profile.d, so it gets a small wrapper as its shell. \
-The wrapper also runs the first-login setup of the admin password."
+DESCRIPTION = "Prints a random two-line joke when root or the admin logs in \
+on the serial console or over SSH. The admin's login shell is clixon_cli, \
+which does not read /etc/profile.d, so it gets a small wrapper as its shell."
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
@@ -32,8 +31,8 @@ do_install() {
 # other ethernet-switch-os packages is fine, only duplicate files are a conflict.
 FILES:${PN} += "${datadir}/ethernet-switch-os"
 
-# dropbear rejects logins whose shell is not in /etc/shells. The cli user (see
-# the image bbappend) has ethernet-switch-os-cli as its shell.
+# dropbear rejects logins whose shell is not in /etc/shells. The admin account
+# (see ethernet-switch-os-auth) has ethernet-switch-os-cli as its shell.
 pkg_postinst:${PN}() {
     grep -qx '${bindir}/ethernet-switch-os-cli' $D${sysconfdir}/shells || \
         echo '${bindir}/ethernet-switch-os-cli' >> $D${sysconfdir}/shells

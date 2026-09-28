@@ -168,8 +168,9 @@ do_deploy() {
 }
 addtask deploy after do_install before do_build
 
-# dropbear rejects logins whose shell is not in /etc/shells, and the "cli" user
-# (see the image bbappend) has clixon_cli as its shell.
+# dropbear rejects logins whose shell is not in /etc/shells. The admin
+# account's shell is ethernet-switch-os-cli, which execs clixon_cli; listed
+# here too for an account that has clixon_cli itself as its shell.
 pkg_postinst:${PN}() {
     grep -qx '${bindir}/clixon_cli' $D${sysconfdir}/shells || \
         echo '${bindir}/clixon_cli' >> $D${sysconfdir}/shells

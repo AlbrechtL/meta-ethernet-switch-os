@@ -1,3 +1,4 @@
-# The admin password has not been set yet. Logins ask for one, and the web
-# interface shows the setup page. ethernet-switch-os-set-password deletes this
-# file; a factory reset brings it back.
+# There is no admin account yet. The web interface shows the setup page,
+# which creates it with a username and password; until then nobody can log
+# in over SSH. ethernet-switch-os-set-password deletes this file; a factory
+# reset brings it back.

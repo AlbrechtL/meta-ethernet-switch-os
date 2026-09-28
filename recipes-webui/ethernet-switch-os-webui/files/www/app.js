@@ -22,7 +22,7 @@ class RestconfError extends Error {
     const errors = [].concat(body?.["ietf-restconf:errors"]?.error ?? []);
     const messages = errors.map((e) => e["error-message"]).filter(Boolean);
     // 401 only comes from lighttpd: the login was cancelled or is outdated.
-    const unauthorized = "Not logged in. Reload the page and log in as cli with the admin password.";
+    const unauthorized = "Not logged in. Reload the page and log in with the admin username and password.";
     super(status === 401 ? unauthorized : messages.length ? messages.join("; ") : `HTTP ${status}`);
     this.status = status;
     this.tag = errors[0]?.["error-tag"];
@@ -496,9 +496,10 @@ async function refresh() {
 }
 
 // ---------------------------------------------------------------------------
-// First-login setup. Until the admin password is set, lighttpd answers only
+// First-login setup. Until the admin account exists, lighttpd answers only
 // two RESTCONF requests without a login: reading setup-required and the
-// set-password RPC. The page shows just the form for that.
+// set-password RPC, which creates the account. The page shows just the form
+// for that.
 
 function showSetup() {
   $("main").hidden = true;
@@ -508,7 +509,7 @@ function showSetup() {
   form.onsubmit = async (event) => {
     event.preventDefault();
     const error = $("setup-error");
-    const { password, repeat } = form.elements;
+    const { username, password, repeat } = form.elements;
     error.hidden = true;
     if (password.value !== repeat.value) {
       error.textContent = "The passwords do not match.";
@@ -518,13 +519,21 @@ function showSetup() {
     $("setup-apply").disabled = true;
     try {
       await restconf("POST", "operations/clixon-switch:set-password", {
-        "clixon-switch:input": { "new-password": password.value },
+        "clixon-switch:input": { username: username.value, "new-password": password.value },
       });
       form.replaceWith(
         el(
           "div",
           {},
-          el("p", {}, "The password is set. Log in as ", el("code", {}, "cli"), " with it."),
+          el(
+            "p",
+            {},
+            "The admin account ",
+            el("code", {}, username.value),
+            " is set up. Log in with it here, and over SSH: ",
+            el("code", {}, `ssh ${username.value}@${location.hostname}`),
+            ".",
+          ),
           el("div", { class: "actions" }, el("button", { type: "button", class: "button", onclick: () => location.reload() }, "Continue")),
         ),
       );

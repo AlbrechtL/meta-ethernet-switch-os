@@ -3,7 +3,7 @@
 │ █▀   █  █▀█ █▀  █▀▄ █ ▀█ █▀   █     ▀▄ █ █ █  █   █  █   █▀█    █ █  ▀▄ │
 │ ▀▀▀  ▀  ▀ ▀ ▀▀▀ ▀ ▀ ▀  ▀ ▀▀▀  ▀    ▀▀   ▀ ▀  ▀▀▀  ▀   ▀▀ ▀ ▀     ▀  ▀▀  │
 │                                                                         │
-│ Admin user cli, also ssh cli@<switch-ip>, https://<switch-ip>/          │
-│   -> the CLI. The first login sets the admin password.                  │
+│ Admin: first set up at https://<switch-ip>/ (username and password),    │
+│   then <username> here or ssh <username>@<switch-ip> -> the CLI.        │
 │ root: serial console only, no password -> Linux shell                   │
 └─────────────────────────────────────────────────────────────────────────┘

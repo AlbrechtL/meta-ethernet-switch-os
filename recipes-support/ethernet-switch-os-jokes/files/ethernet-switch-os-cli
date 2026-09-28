@@ -1,24 +1,12 @@
 #!/bin/sh
-# Login shell of the cli user: the first-login setup while it is pending, a
-# joke, then the clixon CLI.
+# Login shell of the admin account: a joke, then the clixon CLI.
 #
-# Until the admin password is set (ethernet-switch-os-auth), cli logs in
-# without one and has to set it first: the CLI's "password" command, which
-# asks for it twice. Nothing else is possible before, not even a command
-# given on the ssh command line.
+# The account only exists once the first-login setup in the web interface
+# has created it (ethernet-switch-os-auth), so there is nothing to set up
+# here.
 #
-# The joke only comes with an interactive login. "ssh cli@host <command>" makes
-# dropbear run "<shell> -c <command>", which passes through unchanged.
-
-if [ -e /etc/ethernet-switch-os/setup-required ]; then
-    if [ ! -t 0 ]; then
-        echo "The admin password is not set yet. Log in interactively to set it." >&2
-        exit 1
-    fi
-    until /usr/bin/clixon_cli -1 password; do
-        echo "Try again, or press Ctrl-C to log out."
-    done
-fi
+# The joke only comes with an interactive login. "ssh NAME@host <command>"
+# makes dropbear run "<shell> -c <command>", which passes through unchanged.
 
 if [ $# -eq 0 ] && [ -t 0 ] && [ -x /usr/bin/ethernet-switch-os-joke ]; then
     /usr/bin/ethernet-switch-os-joke

@@ -12,21 +12,18 @@ IMAGE_FEATURES += "ssh-server-dropbear"
 #   root  empty password, serial console only. dropbear keeps its default -w
 #         (no root logins), /etc/securetty lists console devices only, and su
 #         is for the wheel group, which nobody is in.
-#   cli   the admin account, for SSH, the serial console and the web. No
-#         password until the first login sets one (the first-login setup, see
-#         ethernet-switch-os-auth); -B lets dropbear accept that first login.
+#   admin account, for SSH, the serial console and the web: not in the
+#         image. The first-login setup in the web interface (or over
+#         RESTCONF) creates it with the username and password the user
+#         chooses, as UID 1000 (see ethernet-switch-os-auth). Until then SSH
+#         has no account to let in. Its login shell is ethernet-switch-os-cli,
+#         which prints a joke and execs clixon_cli, so "ssh NAME@192.168.1.1"
+#         lands directly in the CLI.
 #
-# empty-root-password keeps root's empty password, allow-empty-password adds
-# -B. Not allow-root-login: that would drop -w.
-IMAGE_FEATURES += "empty-root-password allow-empty-password"
-
-# "ssh cli@192.168.1.1" lands directly in the clixon CLI: the login shell is
-# ethernet-switch-os-cli, which runs the first-login setup while it is
-# pending, prints a joke and execs clixon_cli (ethernet-switch-os-jokes adds
-# it to /etc/shells, which dropbear checks). The clicon group grants access to
-# the backend socket.
-inherit extrausers
-EXTRA_USERS_PARAMS = "useradd -m -d /home/cli -s ${bindir}/ethernet-switch-os-cli -G clicon -p '' cli;"
+# empty-root-password keeps root's empty password. Neither
+# allow-empty-password (dropbear's -B: no account needs it) nor
+# allow-root-login (that would drop -w).
+IMAGE_FEATURES += "empty-root-password"
 
 # login(1) lets root in on these terminals only: the serial console (ttyS* on
 # the RTL83xx boards and QEMU, ttyAMA0 on the Raspberry Pi), not the pseudo

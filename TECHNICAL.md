@@ -34,7 +34,7 @@ fails, clixon commits `failsafe_db`, the factory default.
 127.0.0.1 port 80 as root and then drops to user `clicon`. Its listener is the
 `<restconf>` block in `/etc/clixon.xml`. From the network, RESTCONF is
 `https://<switch>/restconf` through lighttpd (see [HTTPS and the login](#https-and-the-login)),
-with the admin password; `curl -u cli` asks for it, `-k` accepts the
+with the admin login; `curl -u <username>` asks for the password, `-k` accepts the
 self-signed certificate. The examples leave both out:
 
 ```sh
@@ -60,7 +60,7 @@ curl -X POST -H 'Content-Type: application/yang-data+json' \
 Factory reset: `ethernet-switch-os-factory-reset` (recipe
 `ethernet-switch-os-auth`), or the RPC `clixon-switch:factory-reset`. It
 marks the data partition, and the BSP's `overlay-init` erases it on the next
-boot: configuration, admin password, SSH host keys and HTTPS certificate.
+boot: configuration, admin account, SSH host keys and HTTPS certificate.
 
 SNMPv3, read-only, on all addresses (keys made with clixon-switch-rs's
 `scripts/snmp-localize-key` for the engine ID, see its README):
@@ -79,8 +79,9 @@ status and settings page on the same origin as `/restconf`. The page is
 plain JavaScript that only talks RESTCONF; `/system/state` of
 `clixon-switch` (host name, firmware version from `/etc/os-release`, uptime,
 load, memory, `setup-required`) exists for it. Its "Firmware update" button
-opens the SWUpdate web UI at `/update/`, and it has the first-login form, a
-password change and the factory reset.
+opens the SWUpdate web UI at `/update/`, and it has the first-login form
+(username and password of the admin account), a password change and the
+factory reset.
 
 | File | Content |
 |---|---|
@@ -158,8 +159,8 @@ this is where the pieces live.
 |---|---|
 | lighttpd on 443: TLS, basic auth, `/restconf` → 127.0.0.1:80, `/update/` → 127.0.0.1:8080, the page's files | `recipes-extended/lighttpd` (bbappend: `lighttpd.conf`, init script that makes the certificate) |
 | SWUpdate on 127.0.0.1:8080; on the TFTP initramfs on port 8080 of every address | `recipes-support/swupdate/files/09-ethernet-switch-os-web` |
-| `ethernet-switch-os-set-password`, `ethernet-switch-os-factory-reset`, `/etc/ethernet-switch-os/setup-required` | `recipes-support/ethernet-switch-os-auth` |
-| First-login setup on SSH and the serial console | `recipes-support/ethernet-switch-os-jokes/files/ethernet-switch-os-cli` |
+| `ethernet-switch-os-set-password` (creates the admin account, UID 1000, in the setup; sets its password), `ethernet-switch-os-factory-reset`, `/etc/ethernet-switch-os/setup-required`, the init script that keeps `cli` of older firmware | `recipes-support/ethernet-switch-os-auth` |
+| The admin's login shell (a joke, then `clixon_cli`) | `recipes-support/ethernet-switch-os-jokes/files/ethernet-switch-os-cli` |
 | bcrypt in shadow; `ENCRYPT_METHOD`, `BCRYPT_*_ROUNDS`, `SU_WHEEL_ONLY`, `/etc/securetty` | `recipes-extended/shadow`, `ethernet-switch-os-image-common.inc` |
 | Reset button → factory reset | `recipes-support/ethernet-switch-os-buttons` |
 
@@ -185,8 +186,15 @@ default, which only root may write; lighttpd runs as `lighttpd`, so the
 
 **The two setup URLs need no login**: `POST .../clixon-switch:set-password`
 and `GET .../clixon-switch:system/state/setup-required`. The RPC is safe
-without one because the backend plugin demands `current-password` once a
-password is set.
+without one because the backend plugin demands `current-password` once the
+admin account exists. Everything else requires `valid-user`: htpasswd only
+ever holds the admin's line, whatever name the setup gave it.
+
+**The admin account is found by UID, not by name.** The image has none; the
+setup creates it with `useradd -u 1000`. The set-password script, the
+backend plugin and the migration init script look up UID 1000 in
+`/etc/passwd`. The image no longer has `allow-empty-password`, so dropbear
+runs without `-B`.
 
 ## Traps
 
@@ -242,7 +250,7 @@ source for `mips32r2-24kc` musl, but its Rust selftests skip mips, so nothing
 upstream tests it.
 
 **dropbear checks `/etc/shells`.** A user whose login shell is not listed is
-rejected with "User 'cli' has invalid shell, rejected" in syslog, and the client
+rejected with "User 'NAME' has invalid shell, rejected" in syslog, and the client
 only sees a failed password. base-files lists just `/bin/sh`;
 `clixon-switch` appends `/usr/bin/clixon_cli` in its postinst.
 

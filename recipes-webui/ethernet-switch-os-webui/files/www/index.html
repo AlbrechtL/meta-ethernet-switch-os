@@ -25,13 +25,19 @@
   </header>
 
   <section id="setup" class="card setup" hidden>
-    <h2>Set the admin password</h2>
+    <h2>Set up the admin account</h2>
     <p>
-      The switch has no password yet. Choose one for the admin account
-      <code>cli</code>: it is used for this web interface, SSH and the serial
-      console. 8 to 128 characters.
+      The switch has no admin account yet. Choose its username and password:
+      they log in to this web interface, over SSH and on the serial console.
+      Until then, SSH lets nobody in. The username can only be changed again
+      with a factory reset.
     </p>
     <form id="setup-form">
+      <label class="field"><span>Username</span>
+        <input name="username" autocomplete="username" autocapitalize="none" spellcheck="false"
+          pattern="[a-z_][a-z0-9_\-]{0,31}" maxlength="32" required
+          title="A lower case letter or _, then up to 31 lower case letters, digits, _ or -">
+      </label>
       <label class="field"><span>New password</span>
         <input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
       </label>
@@ -40,7 +46,7 @@
       </label>
       <p id="setup-error" class="error" role="alert" hidden></p>
       <div class="actions">
-        <button id="setup-apply" type="submit" class="button">Set password</button>
+        <button id="setup-apply" type="submit" class="button">Create account</button>
       </div>
     </form>
   </section>
@@ -115,8 +121,8 @@
     <section class="card">
       <h2>Administration</h2>
       <p class="muted">
-        The admin account <code>cli</code> logs in to this page, over SSH and
-        on the serial console, all with the same password.
+        The admin account logs in to this page, over SSH and on the serial
+        console, all with the same username and password.
       </p>
       <div class="actions">
         <button id="change-password" type="button" class="small">Change password</button>
@@ -152,7 +158,7 @@
   <footer class="muted">
     Changes take effect at once and are kept across a reboot only once saved.
     The switch can also be configured with
-    <code>ssh cli@<span id="host"></span></code> or RESTCONF below
+    <code>ssh <var>username</var>@<span id="host"></span></code> or RESTCONF below
     <code>/restconf</code>, with the same login.
   </footer>
 </body>

@@ -1,0 +1,63 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          ethernet-switch-os-auth
+# Required-Start:
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Keeps the admin account "cli" of older firmware
+### END INIT INFO
+#
+# Firmware before the admin username could be chosen had a fixed admin
+# account, cli, in the image. Newer images have no admin account: the
+# first-login setup creates it with UID 1000 (ethernet-switch-os-set-password).
+#
+# After an update from such firmware, the data partition still has the old
+# /etc/shadow, with cli's password, and the setup is done (setup-required is
+# deleted there), but the new image's /etc/passwd knows no cli. Nobody could
+# log in, and the web setup would not run either. So cli comes back here, as
+# the admin account, with its old password.
+#
+# Not with useradd: it refuses a name that /etc/shadow has already. Runs
+# before dropbear (S10) and lighttpd.
+
+ADMIN_UID=1000
+SHELL_PATH=/usr/bin/ethernet-switch-os-cli
+SETUP_FLAG=/etc/ethernet-switch-os/setup-required
+
+# The member list is the last field, in /etc/group and /etc/gshadow alike.
+add_to_clicon() {
+    [ -e "$1" ] || return 0
+    awk -F: -v OFS=: '$1 == "clicon" { $NF = $NF == "" ? "cli" : $NF ",cli" } { print }' \
+        "$1" > "$1.new" &&
+        chmod "$2" "$1.new" &&
+        mv "$1.new" "$1"
+}
+
+migrate() {
+    [ -e "$SETUP_FLAG" ] && return 0
+    awk -F: -v uid=$ADMIN_UID '$3 == uid { found = 1 } END { exit !found }' /etc/passwd && return 0
+    grep -q '^cli:' /etc/shadow || return 0
+    grep -q '^cli:' /etc/passwd && return 0
+
+    echo "cli:x:$ADMIN_UID:100::/home/cli:$SHELL_PATH" >> /etc/passwd
+    # A member of clicon, for clixon's backend socket.
+    add_to_clicon /etc/group 0644
+    add_to_clicon /etc/gshadow 0400
+    mkdir -p /home/cli
+    chown $ADMIN_UID:100 /home/cli
+    chmod 0700 /home/cli
+    logger -t ethernet-switch-os-auth "kept the admin account cli of the previous firmware"
+}
+
+case "$1" in
+    start)
+        migrate
+        ;;
+    stop | restart | reload | force-reload)
+        ;;
+    *)
+        echo "Usage: $0 start" >&2
+        exit 1
+        ;;
+esac
+exit 0
