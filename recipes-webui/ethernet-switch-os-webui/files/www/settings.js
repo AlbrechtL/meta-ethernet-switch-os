@@ -525,6 +525,70 @@ function editStpPort(name) {
 }
 
 // ---------------------------------------------------------------------------
+// LLDP
+
+const LLDP_TYPES = "openconfig-lldp-types";
+
+function editLldp() {
+  const config = current.lldp?.config ?? {};
+  const suppressed = list(config["suppress-tlv-advertisement"]).map(unprefixed);
+  const system = current.system?.state ?? {};
+  const firmware = [system["os-name"], system["os-version"]].filter(Boolean).join(" ");
+  openDialog(
+    "LLDP",
+    (form) => [
+      checkbox("enabled", config.enabled ?? true, "On: announce the switch on its ports and learn the neighbors"),
+      showWhen(
+        form,
+        el(
+          "div",
+          {},
+          field("Interval (s)", input("interval", config["hello-timer"] ?? 30, { type: "number", min: 1, max: 3600, required: true }), "Neighbors forget the switch after four times this."),
+          field("System name", input("name", config["system-name"], { maxlength: 255, placeholder: system.hostname }), "Empty: the host name."),
+          field("System description", input("description", config["system-description"], { maxlength: 255, placeholder: firmware }), "Empty: the firmware and its version."),
+          checkbox("address", !suppressed.includes("MANAGEMENT_ADDRESS"), "Announce the management address"),
+          checkbox("capabilities", !suppressed.includes("SYSTEM_CAPABILITIES"), "Announce the capabilities (bridge, router)"),
+        ),
+        () => form.elements.enabled.checked,
+      ),
+      note("Neighbors learn the switch's name, firmware and management address. Turn LLDP off on ports that face networks you do not trust."),
+    ],
+    async (f) => {
+      await modify("data/openconfig-lldp:lldp", "openconfig-lldp:lldp", (lldp) => {
+        const c = (lldp.config ??= {});
+        c.enabled = f.enabled.checked;
+        if (!f.enabled.checked) return;
+        c["hello-timer"] = Number(f.interval.value);
+        for (const [leaf, value] of [["system-name", f.name.value.trim()], ["system-description", f.description.value.trim()]]) {
+          if (value) c[leaf] = value;
+          else delete c[leaf];
+        }
+        c["suppress-tlv-advertisement"] = [
+          ...(f.address.checked ? [] : [`${LLDP_TYPES}:MANAGEMENT_ADDRESS`]),
+          ...(f.capabilities.checked ? [] : [`${LLDP_TYPES}:SYSTEM_CAPABILITIES`]),
+        ];
+      });
+    },
+  );
+}
+
+function editLldpPort(name) {
+  const entry = list(current.lldp?.interfaces?.interface).find((i) => i.name === name);
+  openDialog(
+    `LLDP: ${name}`,
+    () => [
+      checkbox("enabled", entry?.config?.enabled ?? true, "LLDP on this port"),
+      note("Off: the switch neither announces itself on the port nor learns the neighbor there."),
+    ],
+    async (f) => {
+      await modify("data/openconfig-lldp:lldp", "openconfig-lldp:lldp", (lldp) => {
+        entryFor((lldp.interfaces ??= {}), name).enabled = f.enabled.checked;
+      });
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // SNMP
 
 // Members of this group may read everything, authenticated and encrypted.
@@ -593,7 +657,8 @@ function editSnmpUser() {
         }
         group.member = [...list(group.member), { "security-name": name, "security-model": ["usm"] }];
         vacm.view = list(vacm.view);
-        if (!vacm.view.some((v) => v.name === SNMP_VIEW)) vacm.view.push({ name: SNMP_VIEW, include: ["1.3.6.1"] });
+        // 1.0.8802: LLDP-MIB.
+        if (!vacm.view.some((v) => v.name === SNMP_VIEW)) vacm.view.push({ name: SNMP_VIEW, include: ["1.3.6.1", "1.0.8802"] });
       });
     },
   );

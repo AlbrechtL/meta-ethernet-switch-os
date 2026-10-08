@@ -2,8 +2,9 @@ SUMMARY = "clixon backend plugin for the switch configuration"
 DESCRIPTION = "Rust clixon backend plugin that applies the OpenConfig switch \
 configuration to the kernel: front ports in a VLAN-aware bridge, routed \
 VLAN interfaces with static IPv4 addresses or a DHCP client (busybox udhcpc), \
-spanning tree (STP, RSTP, MSTP) with mstpd, and a read-only SNMPv3 agent \
-(snmpd with clixon_snmp for BRIDGE-MIB, Q-BRIDGE-MIB and RSTP-MIB). \
+spanning tree (STP, RSTP, MSTP) with mstpd, LLDP with lldpd, and a \
+read-only SNMPv3 agent (snmpd with clixon_snmp for BRIDGE-MIB, Q-BRIDGE-MIB \
+and RSTP-MIB, lldpd for LLDP-MIB). \
 Also installs the YANG modules, clixon.xml, the CLI specification with its \
 plugin (password, factory-reset), the factory default, the udhcpc script and \
 init scripts for the backend and RESTCONF, which listens on 127.0.0.1 behind \
@@ -198,12 +199,13 @@ FILES:${PN} += " \
 # mstpd-mstpd: mstpd and mstpctl, patched in recipes-networking/mstpd.
 # clixon-snmp and net-snmp-server-snmpd: the SNMP agent, both started by the
 # plugin; trimmed in recipes-networking/net-snmp, patched in recipes-clixon.
+# lldpd: LLDP, started by the plugin; trimmed in recipes-networking/lldpd.
 # os-release: the plugin reads /etc/os-release for the firmware version in
 # /system/state.
 # ethernet-switch-os-auth: the scripts behind the set-password and
 # factory-reset RPCs.
 RDEPENDS:${PN} = "clixon base-files ${VIRTUAL-RUNTIME_base-utils} mstpd-mstpd \
-    clixon-snmp net-snmp-server-snmpd os-release ethernet-switch-os-auth"
+    clixon-snmp net-snmp-server-snmpd lldpd os-release ethernet-switch-os-auth"
 RDEPENDS:${PN}-restconf = "${PN}"
 
 # The backend configures the network, so it takes the old network script's

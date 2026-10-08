@@ -162,6 +162,7 @@ const current = {
   groups: [],
   stp: null,
   snmp: null,
+  lldp: null,
 };
 
 const ports = () => current.interfaces.filter((i) => i["openconfig-if-ethernet:ethernet"]);
@@ -378,6 +379,67 @@ function renderStp(stp) {
   $("stp-ports").replaceChildren(...rows);
 }
 
+// LLDP_SYSTEM_CAPABILITY identities, as the LLDP card names them.
+const LLDP_CAPABILITIES = {
+  OTHER: "other",
+  REPEATER: "repeater",
+  MAC_BRIDGE: "bridge",
+  WLAN_ACCESS_POINT: "WLAN access point",
+  ROUTER: "router",
+  TELEPHONE: "telephone",
+  DOCSIS_CABLE_DEVICE: "DOCSIS",
+  STATION_ONLY: "station",
+  C_VLAN: "C-VLAN",
+  S_VLAN: "S-VLAN",
+  TWO_PORT_MAC_RELAY: "two-port MAC relay",
+};
+
+function renderLldp(lldp) {
+  const state = lldp?.state ?? {};
+  const config = lldp?.config ?? {};
+  const enabled = state.enabled ?? config.enabled ?? true;
+  $("lldp").replaceChildren(
+    ...facts([
+      ["LLDP", enabled ? "on" : "off"],
+      ["Interval", enabled ? `${state["hello-timer"] ?? config["hello-timer"] ?? 30} s` : null],
+      ["System name", enabled ? state["system-name"] : null],
+      ["Chassis ID", enabled ? state["chassis-id"] : null],
+    ]),
+  );
+  const entries = list(lldp?.interfaces?.interface);
+  // A row per neighbor, a port with none gets one too.
+  const rows = ports().flatMap((port) => {
+    const entry = entries.find((i) => i.name === port.name);
+    const on = enabled && (entry?.state?.enabled ?? entry?.config?.enabled ?? true);
+    const neighbors = list(entry?.neighbors?.neighbor).map((n) => ({ ...n.state, capabilities: n.capabilities }));
+    const name = el("td", {}, el("strong", {}, port.name));
+    const status = el("td", {}, on ? "on" : "off");
+    const edit = el("td", { class: "num" }, action("Edit", () => editLldpPort(port.name)));
+    if (!neighbors.length) {
+      return [el("tr", {}, name, status, el("td", { colspan: 5, class: "muted" }, on ? "No neighbor." : "–"), edit)];
+    }
+    return neighbors.map((n, i) => {
+      const capabilities = list(n.capabilities?.capability)
+        .filter((c) => c.state?.enabled)
+        .map((c) => LLDP_CAPABILITIES[unprefixed(c.name)] ?? unprefixed(c.name));
+      const description = n["port-description"] && n["port-description"] !== n["port-id"] ? ` (${n["port-description"]})` : "";
+      return el(
+        "tr",
+        {},
+        i === 0 ? name : el("td"),
+        i === 0 ? status : el("td"),
+        el("td", { class: "wrap", title: n["system-description"] ?? "" }, n["system-name"] ?? "–"),
+        el("td", { class: "wrap" }, `${n["port-id"] ?? ""}${description}`),
+        el("td", { class: "mono" }, n["chassis-id"] ?? ""),
+        el("td", {}, n["management-address"] ?? ""),
+        el("td", { class: "wrap" }, capabilities.join(", ")),
+        i === 0 ? edit : el("td"),
+      );
+    });
+  });
+  $("lldp-ports").replaceChildren(...rows);
+}
+
 function renderSnmp(snmp) {
   const engine = snmp?.engine ?? {};
   const users = list(snmp?.usm?.local?.user);
@@ -452,13 +514,14 @@ async function refresh() {
   loading = true;
   $("status").textContent = "Updating…";
   try {
-    const [system, interfaces, sw, stpConfig, snmp] = await Promise.all([
+    const [system, interfaces, sw, stpConfig, snmp, lldp] = await Promise.all([
       restconfGet("clixon-switch:system"),
       restconfGet("openconfig-interfaces:interfaces", { optional: true }),
       restconfGet("clixon-switch:switch", { optional: true }),
       // The state asks mstpd a few times per port: only while it runs.
       restconfGet("openconfig-spanning-tree:stp?content=config", { optional: true }),
       restconfGet("ietf-snmp:snmp", { optional: true }),
+      restconfGet("openconfig-lldp:lldp", { optional: true }),
     ]);
     const mode = sw?.state?.["vlan-mode"] ?? sw?.config?.["vlan-mode"] ?? "DOT1Q";
     const stpOn = list(stpConfig?.global?.config?.["enabled-protocol"]).length > 0;
@@ -477,12 +540,14 @@ async function refresh() {
       groups: list(groups?.group),
       stp,
       snmp,
+      lldp,
     });
     renderSystem(system);
     renderManagement(current.interfaces);
     renderPorts(mode);
     renderVlans(mode);
     renderStp(stp);
+    renderLldp(lldp);
     renderSnmp(snmp);
     $("error").hidden = true;
     $("status").textContent = `Updated ${new Date().toLocaleTimeString()}`;
@@ -568,6 +633,7 @@ $("refresh").addEventListener("click", refresh);
 $("save").addEventListener("click", save);
 $("edit-system").addEventListener("click", () => editSystem());
 $("edit-stp").addEventListener("click", () => editStp());
+$("edit-lldp").addEventListener("click", () => editLldp());
 $("change-password").addEventListener("click", () => editPassword());
 $("factory-reset").addEventListener("click", () => factoryReset());
 try {

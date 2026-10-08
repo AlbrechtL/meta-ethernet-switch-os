@@ -15,6 +15,8 @@ target, and traps worth remembering.
 | `/sbin/bridge-stp` | link to `/usr/lib/clixon-switch/bridge-stp`, run by the kernel when spanning tree is switched on |
 | `/usr/sbin/mstpd`, `/usr/sbin/mstpctl` | spanning tree daemon, started by the plugin while `/stp` enables a protocol |
 | `/usr/sbin/snmpd`, `/usr/sbin/clixon_snmp` | SNMP agent and its AgentX subagent for the bridge MIBs, started by the plugin while `/snmp/engine/enabled` is true |
+| `/usr/sbin/lldpd`, `/usr/sbin/lldpcli` | LLDP daemon, started by the plugin while `/lldp` enables LLDP (the default); its unprivileged process runs as `nobody` |
+| `/var/run/clixon-switch/lldpd/` | lldpd's configuration, written by the plugin, and its control socket; mode 0700 |
 | `/var/run/clixon-switch/snmpd.conf`, `agentx.sock` | snmpd's configuration (with the USM keys, mode 0600), written by the plugin; the AgentX socket (`CLICON_SNMP_AGENT_SOCK`) |
 | `/var/lib/net-snmp/snmpd.conf` | snmpd's persistent data (flash): `engineBoots` |
 | `/usr/share/clixon-switch/yang/` | the main module, its OpenConfig and IETF imports, and the MIBs as YANG (`mib/`) |
@@ -99,7 +101,8 @@ the page off is undone by a reboot. How a dialog writes:
 - Changes that must remove and add in the same commit read the subtree with
   `?content=config`, change it in JavaScript and PUT it back (`modify()`):
   spanning tree, SNMP (enabling needs a user, removing the last one needs
-  disabling) and the port-based groups (a port moves between two groups).
+  disabling), LLDP and the port-based groups (a port moves between two
+  groups).
 - Switching the VLAN mode touches `vlans`, `port-based-vlans`, `switch` and
   every port, so it is a PUT of the whole datastore (`PUT /restconf/data`
   with `{"ietf-restconf:data": ...}`, which clixon accepts at the root).
@@ -118,7 +121,9 @@ user'`), so `modify()` drops empty lists and containers first.
 
 The spanning tree state is only fetched while a protocol is enabled:
 reading it runs `mstpctl` a few times per port, which is expensive every
-5 seconds on this CPU. The auto-refresh pauses while a dialog is open.
+5 seconds on this CPU. The LLDP state (with the neighbors) costs three
+`lldpcli` runs, whatever the number of ports, and is fetched on every
+refresh. The auto-refresh pauses while a dialog is open.
 
 The page lives in **this** layer, in
 `recipes-webui/ethernet-switch-os-webui/files/www`, not in clixon-switch-rs:
@@ -244,6 +249,20 @@ checks from clixon master.
 **net-snmp's `--enable-read-only` breaks clixon_snmp.** It removes the
 `MODE_SET_*` constants clixon_snmp uses. Nothing is writable anyway: the
 MIB modules are `config false`, and the plugin configures no write view.
+
+**A new system user would be missing after an update.** The first-login
+setup creates the admin account, so `/etc/passwd` and `/etc/group` live in
+the overlay on the data partition from then on, and hide the new image's.
+lldpd therefore drops its privileges to `nobody`/`nogroup`
+(`recipes-networking/lldpd`) instead of a user of its own. As lldpd lets
+that group use its control socket, the socket sits in a directory only root
+can enter.
+
+**lldpd reconnects to a restarted snmpd only after 15 seconds.** snmpd
+restarts on every change of `/snmp`; LLDP-MIB answers "No Such Object"
+until lldpd's AgentX subagent has registered again. lldpd itself restarts
+only when SNMP is turned on or off, which also clears its neighbor table
+until the neighbors send again.
 
 **Rust on mips is a tier-3 target.** oe-core builds the standard library from
 source for `mips32r2-24kc` musl, but its Rust selftests skip mips, so nothing
