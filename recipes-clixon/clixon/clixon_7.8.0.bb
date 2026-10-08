@@ -19,12 +19,17 @@ SRCREV = "62a901b1c6215703a7c37e1ff4d51a155587af7d"
 # clixon_restconf behind lighttpd (recipes-extended/lighttpd):
 # 0005: closes the connection after "Connection: close"; lighttpd waits for
 #       that to end a 204 (copy-config, RPCs without output).
+# clixon_backend on the Raspberry Pi (32-bit little-endian ARM, musl):
+# 0006: clixon_xpath_ctx.c sees struct xp_ctx without xc_invariant, so
+#       ctx_dup() allocates it too small; mallocng catches the overflow on
+#       free() and the backend dies with SIGILL at startup.
 SRC_URI += " \
     file://0001-SNMP-backport-OID-and-octet-string-bounds-checks-fro.patch \
     file://0002-SNMP-support-YANG-binary-and-mac-address-types.patch \
     file://0003-SNMP-fix-tables-with-augments-and-index-leaves-from-.patch \
     file://0004-SNMP-build-with-net-snmp-without-MIB-loading.patch \
     file://0005-restconf-close-the-HTTP-1-connection-after-a-request.patch \
+    file://0006-xpath-include-clixon_config.h-in-clixon_xpath_ctx.c.patch \
 "
 
 # openssl: libclixon uses SHA from libcrypto (lib/src/clixon_digest.c), and
